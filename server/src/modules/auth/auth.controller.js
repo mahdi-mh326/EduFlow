@@ -1,0 +1,103 @@
+import catchAsync from "../../shared/catchAsync.js";
+import sendResponse from "../../shared/sendResponse.js";
+import { AuthService } from "./auth.service.js";
+import { AUTH_MESSAGES, AUTH_STATUS_CODES } from "./auth.constant.js";
+
+const register = catchAsync(async (req, res) => {
+  const result = await AuthService.registerUser(req.body);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.CREATED,
+    success: true,
+    message: AUTH_MESSAGES.REGISTRATION_SUCCESS,
+    data: result,
+  });
+});
+
+const verifyEmail = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const result = await AuthService.verifyEmail(email, otp);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.EMAIL_VERIFICATION_SUCCESS,
+    data: result,
+  });
+});
+
+const resendOTP = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await AuthService.resendOTP(email);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.OTP_SENT_SUCCESS,
+    data: result,
+  });
+});
+
+const login = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
+  const result = await AuthService.login(email, password);
+
+  res.cookie("refreshToken", result.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.LOGIN_SUCCESS,
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+    },
+  });
+});
+
+const refreshToken = catchAsync(async (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) {
+    return sendResponse(res, {
+      statusCode: AUTH_STATUS_CODES.UNAUTHORIZED,
+      success: false,
+      message: AUTH_MESSAGES.REFRESH_TOKEN_NOT_FOUND,
+      data: null,
+    });
+  }
+
+  const result = await AuthService.refreshAccessToken(token);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.TOKEN_REFRESHED,
+    data: result,
+  });
+});
+
+const logout = catchAsync(async (req, res) => {
+  res.clearCookie("refreshToken");
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.LOGOUT_SUCCESS,
+    data: null,
+  });
+});
+
+export const AuthController = {
+  register,
+  verifyEmail,
+  resendOTP,
+  login,
+  refreshToken,
+  logout,
+};

@@ -1,0 +1,31 @@
+export const AUTH_MESSAGES = {
+  REGISTRATION_SUCCESS: "Registration successful. Please verify your email.",
+  EMAIL_VERIFICATION_SUCCESS: "Email verified successfully",
+  OTP_SENT_SUCCESS: "OTP sent successfully",
+  LOGIN_SUCCESS: "Login successful",
+  LOGOUT_SUCCESS: "Logout successful",
+  TOKEN_REFRESHED: "Token refreshed successfully",
+  EMAIL_ALREADY_EXISTS: "Email already exists",
+  PHONE_ALREADY_EXISTS: "Phone number already exists",
+  USER_NOT_FOUND: "User not found",
+  INVALID_OTP: "Invalid OTP",
+  OTP_EXPIRED: "OTP expired",
+  EMAIL_ALREADY_VERIFIED: "Email already verified",
+  EMAIL_NOT_VERIFIED: "Please verify your email first",
+  ACCOUNT_NOT_ACTIVE: "Your account is not active",
+  INVALID_CREDENTIALS: "Invalid email or password",
+  NO_TOKEN_PROVIDED: "No token provided",
+  INVALID_TOKEN: "Invalid or expired token",
+  REFRESH_TOKEN_NOT_FOUND: "Refresh token not found",
+};
+
+export const AUTH_STATUS_CODES = {
+  SUCCESS: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_SERVER_ERROR: 500,
+};
