@@ -12,7 +12,7 @@ const sendOTP = async (email) => {
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  await OTP.findOneAndUpdate(
+  const result = await OTP.findOneAndUpdate(
     { email },
     {
       email,
@@ -24,11 +24,15 @@ const sendOTP = async (email) => {
     { upsert: true, new: true }
   );
 
+  console.log("OTP saved:", result);
+
   return otp;
 };
 
 const verifyOTP = async (email, otp) => {
+  console.log("Verifying OTP for email:", email);
   const otpRecord = await OTP.findOne({ email });
+  console.log("OTP record found:", otpRecord);
 
   if (!otpRecord) {
     throw new ApiError(404, "OTP not found");
