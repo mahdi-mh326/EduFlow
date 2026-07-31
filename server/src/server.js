@@ -10,7 +10,7 @@ import logger from "./shared/logger.js";
 const startServer = async () => {
   try {
     await connectDB();
-    // logger.info("✅ MongoDB Connected Successfully");
+    logger.info("✅ MongoDB Connected Successfully");
 
     app.listen(env.port, () => {
       logger.info(`🚀 Server running on port ${env.port}`);
@@ -20,5 +20,15 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+process.on("unhandledRejection", (reason) => {
+  logger.error(`Unhandled Rejection: ${reason}`);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error(`Uncaught Exception: ${error.message}`);
+  process.exit(1);
+});
 
 startServer();

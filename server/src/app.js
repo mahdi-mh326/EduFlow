@@ -28,6 +28,17 @@ app.use(morgan("dev"));
 
 app.use(express.json());
 
+app.use((err, req, res, next) => {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({
+      success: false,
+      message: "Malformed JSON in request body",
+      errors: [],
+    });
+  }
+  next(err);
+});
+
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
