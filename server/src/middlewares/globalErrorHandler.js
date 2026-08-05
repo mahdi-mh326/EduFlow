@@ -6,11 +6,12 @@ const globalErrorHandler = (err, req, res, next) => {
   let message = err.message || "Internal Server Error";
   let errors = [];
 
-  // ZodError
+  // ZodError — Zod v4 uses `issues`; Zod v3 uses `errors`. Support both safely.
   if (err instanceof ZodError) {
+    const issues = err.issues ?? err.errors ?? [];
     statusCode = 400;
-    message = err.errors[0]?.message || "Validation failed";
-    errors = err.errors.map((e) => ({
+    message = issues[0]?.message || "Validation failed";
+    errors = issues.map((e) => ({
       field: e.path.join("."),
       message: e.message,
     }));
@@ -61,7 +62,15 @@ const globalErrorHandler = (err, req, res, next) => {
     errors = [];
   }
 
-  logger.error(`[${statusCode}] ${err.message || message}`);
+  // For unhandled 500s, log the full stack so the real cause is visible in server logs.
+  // For known operational errors (4xx / handled 5xx), a one-liner is sufficient.
+  if (statusCode === 500) {
+    logger.error(
+      `[${statusCode}] ${err.name || "Error"}: ${err.message}\n${err.stack || "(no stack trace)"}`
+    );
+  } else {
+    logger.error(`[${statusCode}] ${err.message || message}`);
+  }
 
   res.status(statusCode).json({
     success: false,

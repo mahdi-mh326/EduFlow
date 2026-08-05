@@ -38,6 +38,18 @@ const resendOTP = catchAsync(async (req, res) => {
   });
 });
 
+const sendVerificationOTP = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await AuthService.sendVerificationOTP(email);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.OTP_SENT,
+    data: result,
+  });
+});
+
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const result = await AuthService.login(email, password);
@@ -49,14 +61,31 @@ const login = catchAsync(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
+  const responseData = {
+    user: result.user,
+    accessToken: result.accessToken,
+  };
+
+  if (result.forcePasswordChange) {
+    responseData.forcePasswordChange = true;
+  }
+
   sendResponse(res, {
     statusCode: AUTH_STATUS_CODES.SUCCESS,
     success: true,
     message: AUTH_MESSAGES.LOGIN_SUCCESS,
-    data: {
-      user: result.user,
-      accessToken: result.accessToken,
-    },
+    data: responseData,
+  });
+});
+
+const setPassword = catchAsync(async (req, res) => {
+  const result = await AuthService.setPassword(req.user._id, req.body);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.SET_PASSWORD_SUCCESS,
+    data: result,
   });
 });
 
@@ -97,7 +126,9 @@ export const AuthController = {
   register,
   verifyEmail,
   resendOTP,
+  sendVerificationOTP,
   login,
+  setPassword,
   refreshToken,
   logout,
 };

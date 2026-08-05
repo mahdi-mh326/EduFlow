@@ -17,6 +17,7 @@ export const AUTH_MESSAGES = {
   NO_TOKEN_PROVIDED: "No token provided",
   INVALID_TOKEN: "Invalid or expired token",
   REFRESH_TOKEN_NOT_FOUND: "Refresh token not found",
+  OTP_SENT: "Verification OTP sent successfully",
 };
 
 export const AUTH_STATUS_CODES = {

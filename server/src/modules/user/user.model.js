@@ -64,8 +64,26 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
+
     lastLogin: {
       type: Date,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+      select: false,
     },
 
     createdBy: {

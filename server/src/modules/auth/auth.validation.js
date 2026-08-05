@@ -66,9 +66,31 @@ const resendOTPValidationSchema = z.object({
   }),
 });
 
+const setPasswordValidationSchema = z.object({
+  body: z.object({
+    currentPassword: z
+      .string()
+      .min(6, "Current password must be at least 6 characters"),
+    newPassword: z
+      .string()
+      .min(6, "New password must be at least 6 characters"),
+  }),
+});
+
+const sendVerificationOTPValidationSchema = z.object({
+  body: z.object({
+    email: z
+      .string()
+      .email("Invalid email address")
+      .transform((value) => value.toLowerCase()),
+  }),
+});
+
 export const AuthValidation = {
   registerValidationSchema,
   verifyEmailValidationSchema,
   loginValidationSchema,
   resendOTPValidationSchema,
+  setPasswordValidationSchema,
+  sendVerificationOTPValidationSchema,
 };

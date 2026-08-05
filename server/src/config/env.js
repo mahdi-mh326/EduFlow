@@ -18,6 +18,11 @@ const env = {
 
   brevoApiKey: process.env.BREVO_API_KEY,
   emailFrom: process.env.EMAIL_FROM,
+
+  superAdminName: process.env.SUPER_ADMIN_NAME,
+  superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
+  superAdminPhone: process.env.SUPER_ADMIN_PHONE,
+  superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
 };
 
 export default env;

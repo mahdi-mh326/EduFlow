@@ -4,7 +4,7 @@ import { OTPService } from "../otp/otp.service.js";
 import sendEmail from "../../utils/email/sendEmail.js";
 import { emailTemplates } from "../../utils/email/email.template.js";
 import { tokenUtils } from "./auth.token.js";
-import { USER_STATUS } from "../user/user.constant.js";
+import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { AUTH_MESSAGES } from "./auth.constant.js";
 
 const registerUser = async (payload) => {
@@ -97,11 +97,46 @@ const resendOTP = async (email) => {
   };
 };
 
+const sendVerificationOTP = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, AUTH_MESSAGES.USER_NOT_FOUND);
+  }
+
+  if (user.isVerified) {
+    throw new ApiError(400, AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED);
+  }
+
+  const otp = await OTPService.sendOTP(email);
+
+  await sendEmail({
+    to: email,
+    subject: "Verify Your Email",
+    html: emailTemplates.otpVerification(user.fullName, otp),
+  });
+
+  return {
+    email,
+    message: AUTH_MESSAGES.OTP_SENT,
+  };
+};
+
 const login = async (email, password) => {
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select("+password +mustChangePassword");
 
   if (!user) {
     throw new ApiError(401, AUTH_MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  const isPasswordValid = await user.comparePassword(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, AUTH_MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  if (user.role === USER_ROLE.TEACHER && !user.isVerified) {
+    throw new ApiError(403, "Please verify your email first.");
   }
 
   if (!user.isVerified) {
@@ -110,12 +145,6 @@ const login = async (email, password) => {
 
   if (user.status !== USER_STATUS.ACTIVE) {
     throw new ApiError(403, AUTH_MESSAGES.ACCOUNT_NOT_ACTIVE);
-  }
-
-  const isPasswordValid = await user.comparePassword(password);
-
-  if (!isPasswordValid) {
-    throw new ApiError(401, AUTH_MESSAGES.INVALID_CREDENTIALS);
   }
 
   const accessToken = tokenUtils.generateAccessToken({
@@ -141,6 +170,32 @@ const login = async (email, password) => {
     },
     accessToken,
     refreshToken,
+    forcePasswordChange: user.mustChangePassword || false,
+  };
+};
+
+const setPassword = async (userId, payload) => {
+  const { currentPassword, newPassword } = payload;
+
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new ApiError(404, AUTH_MESSAGES.USER_NOT_FOUND);
+  }
+
+  const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError(401, AUTH_MESSAGES.CURRENT_PASSWORD_INVALID);
+  }
+
+  user.password = newPassword;
+  user.mustChangePassword = false;
+
+  await user.save();
+
+  return {
+    message: AUTH_MESSAGES.SET_PASSWORD_SUCCESS,
   };
 };
 
@@ -168,6 +223,8 @@ export const AuthService = {
   registerUser,
   verifyEmail,
   resendOTP,
+  sendVerificationOTP,
   login,
+  setPassword,
   refreshAccessToken,
 };

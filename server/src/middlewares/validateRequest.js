@@ -15,7 +15,9 @@ const validateRequest = (schema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const message = error.errors[0]?.message || "Validation failed";
+        // Zod v4 uses `issues`; Zod v3 uses `errors`. Support both safely.
+        const issues = error.issues ?? error.errors ?? [];
+        const message = issues[0]?.message || "Validation failed";
         return next(new ApiError(400, message));
       }
       next(error);

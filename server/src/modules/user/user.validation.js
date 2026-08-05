@@ -12,19 +12,19 @@ const isoDate = z
 const createUserValidationSchema = z.object({
   body: z.object({
     fullName: z
-      .string({ required_error: "Full name is required." })
+      .string({ error: (i) => i.input === undefined ? "Full name is required." : "Full name must be a string." })
       .min(3, "Full name must be at least 3 characters.")
       .max(100, "Full name must be at most 100 characters."),
 
     email: z
-      .string({ required_error: "Email is required." })
+      .string({ error: (i) => i.input === undefined ? "Email is required." : "Email must be a string." })
       .email("Invalid email address.")
       .toLowerCase(),
 
     phone: e164Phone,
 
     password: z
-      .string({ required_error: "Password is required." })
+      .string({ error: (i) => i.input === undefined ? "Password is required." : "Password must be a string." })
       .min(6, "Password must be at least 6 characters."),
 
     gender: z.enum(["male", "female", "other"]).optional(),
@@ -33,21 +33,20 @@ const createUserValidationSchema = z.object({
   }),
 });
 
-const updateProfileValidationSchema = z
-  .object({
-    body: z
-      .object({
-        fullName: z.string().min(3, "Full name must be at least 3 characters.").max(100).optional(),
-        phone: e164Phone.optional(),
-        gender: z.enum(["male", "female", "other"]).optional(),
-        avatar: z.string().url("Invalid avatar URL.").optional(),
-        dateOfBirth: isoDate.optional(),
-      })
-      .refine(
-        (data) => Object.values(data).some((v) => v !== undefined),
-        { message: "At least one field must be provided for update." }
-      ),
-  });
+const updateProfileValidationSchema = z.object({
+  body: z
+    .object({
+      fullName: z.string().min(3, "Full name must be at least 3 characters.").max(100).optional(),
+      phone: e164Phone.optional(),
+      gender: z.enum(["male", "female", "other"]).optional(),
+      avatar: z.string().url("Invalid avatar URL.").optional(),
+      dateOfBirth: isoDate.optional(),
+    })
+    .refine(
+      (data) => Object.values(data).some((v) => v !== undefined),
+      { message: "At least one field must be provided for update." }
+    ),
+});
 
 const changePasswordValidationSchema = z.object({
   body: z
