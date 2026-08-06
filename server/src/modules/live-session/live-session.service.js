@@ -101,11 +101,12 @@ const createLiveSession = async (payload, createdBy, userRole) => {
 
   if (userRole === USER_ROLE.TEACHER) {
     await validateTeacherOwnership(classId, createdBy);
+    payload.teacherId = createdBy;
   }
 
   const cls = await validateClass(classId);
   await validateCourse(courseId);
-  await validateTeacher(teacherId);
+  await validateTeacher(payload.teacherId);
 
   if (isSessionPast(scheduledDate, startTime, endTime)) {
     throw new ApiError(400, LIVE_SESSION_MESSAGES.INVALID_SCHEDULE);
@@ -117,7 +118,7 @@ const createLiveSession = async (payload, createdBy, userRole) => {
   const session = await LiveSession.create({
     courseId,
     classId,
-    teacherId,
+    teacherId: payload.teacherId,
     title,
     description: description || "",
     meetingRoom,

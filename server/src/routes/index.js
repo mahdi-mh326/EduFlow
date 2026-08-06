@@ -11,6 +11,7 @@ import studentRoutes from "../modules/student/student.route.js";
 import materialRoutes from "../modules/material/material.route.js";
 import noticeRoutes from "../modules/notice/notice.route.js";
 import liveSessionRoutes from "../modules/live-session/live-session.route.js";
+import attendanceRoutes from "../modules/attendance/attendance.route.js";
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use("/student", studentRoutes);
 router.use("/materials", materialRoutes);
 router.use("/notices", noticeRoutes);
 router.use("/live-sessions", liveSessionRoutes);
+router.use("/attendances", attendanceRoutes);
 
 export default router;

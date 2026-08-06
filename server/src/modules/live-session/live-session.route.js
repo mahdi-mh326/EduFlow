@@ -32,11 +32,4 @@ router.delete(
   LiveSessionController.deleteLiveSession
 );
 
-router.get(
-  "/student/live-sessions",
-  authenticate,
-  authorize(USER_ROLE.STUDENT),
-  LiveSessionController.getStudentLiveSessions
-);
-
 export default router;
