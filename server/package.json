@@ -30,6 +30,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
+    "sslcommerz-lts": "^1.2.0",
     "uuid": "^14.0.1",
     "winston": "^3.19.0",
     "zod": "^4.4.3"

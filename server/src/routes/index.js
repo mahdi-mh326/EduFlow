@@ -12,6 +12,7 @@ import materialRoutes from "../modules/material/material.route.js";
 import noticeRoutes from "../modules/notice/notice.route.js";
 import liveSessionRoutes from "../modules/live-session/live-session.route.js";
 import attendanceRoutes from "../modules/attendance/attendance.route.js";
+import paymentRoutes from "../modules/payment/payment.route.js";
 
 const router = express.Router();
 
@@ -27,5 +28,6 @@ router.use("/materials", materialRoutes);
 router.use("/notices", noticeRoutes);
 router.use("/live-sessions", liveSessionRoutes);
 router.use("/attendances", attendanceRoutes);
+router.use("/payments", paymentRoutes);
 
 export default router;
