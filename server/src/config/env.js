@@ -23,6 +23,12 @@ const env = {
   superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
   superAdminPhone: process.env.SUPER_ADMIN_PHONE,
   superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
+
+  aiProvider: process.env.AI_PROVIDER,
+  aiApiKey: process.env.AI_API_KEY,
+  aiModel: process.env.AI_MODEL,
+  aiBaseURL: process.env.AI_BASE_URL,
+  aiTimeout: process.env.AI_TIMEOUT,
 };
 
 export default env;

@@ -1,5 +1,7 @@
 import express from "express";
 
+import chatbotRoutes from "../modules/chatbot/chatbot.route.js";
+
 import authRoutes from "../modules/auth/auth.route.js";
 import userRoutes from "../modules/user/user.route.js";
 import teacherRoutes from "../modules/teacher/teacher.route.js";
@@ -19,6 +21,7 @@ import notificationRoutes from "../modules/notification/notification.route.js";
 
 const router = express.Router();
 
+router.use("/chatbot", chatbotRoutes);
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/teachers", teacherRoutes);
