@@ -19,8 +19,8 @@ const authenticate = async (req, res, next) => {
       throw new ApiError(401, "User not found");
     }
 
-    if (user.status === USER_STATUS.BLOCKED) {
-      throw new ApiError(403, "Your account is blocked");
+    if (user.status !== USER_STATUS.ACTIVE) {
+      throw new ApiError(403, "Your account is not active");
     }
 
     if (!user.isVerified) {

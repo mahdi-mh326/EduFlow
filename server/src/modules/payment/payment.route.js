@@ -8,6 +8,15 @@ import { PaymentValidation } from "./payment.validation.js";
 
 const router = express.Router();
 
+router.post("/success", PaymentController.paymentSuccess);
+router.get("/success", PaymentController.paymentSuccess);
+router.post("/fail", PaymentController.paymentFail);
+router.get("/fail", PaymentController.paymentFail);
+router.post("/cancel", PaymentController.paymentCancel);
+router.get("/cancel", PaymentController.paymentCancel);
+router.post("/ipn", PaymentController.paymentIpn);
+router.get("/ipn", PaymentController.paymentIpn);
+
 router.post(
   "/initiate",
   authenticate,
@@ -23,7 +32,7 @@ router.get(
   PaymentController.getStudentPayments
 );
 
-router.use(authenticate, authorize(USER_ROLE.ADMIN));
+router.use(authenticate, authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN));
 
 router.get("/", PaymentController.getPayments);
 

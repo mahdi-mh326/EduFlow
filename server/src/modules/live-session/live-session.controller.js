@@ -2,9 +2,11 @@ import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { LiveSessionService } from "./live-session.service.js";
 import { LIVE_SESSION_MESSAGES } from "./live-session.constant.js";
+import { NotificationService } from "../notification/notification.service.js";
 
 const createLiveSession = catchAsync(async (req, res) => {
   const result = await LiveSessionService.createLiveSession(req.body, req.user._id, req.user.role);
+  await NotificationService.dispatchLiveSessionScheduled(result, req.user._id);
 
   sendResponse(res, {
     statusCode: 201,
@@ -38,6 +40,7 @@ const getLiveSessionById = catchAsync(async (req, res) => {
 
 const updateLiveSession = catchAsync(async (req, res) => {
   const result = await LiveSessionService.updateLiveSession(req.params.id, req.body, req.user._id, req.user.role);
+  await NotificationService.dispatchLiveSessionUpdated(result, req.user._id);
 
   sendResponse(res, {
     statusCode: 200,
@@ -49,6 +52,7 @@ const updateLiveSession = catchAsync(async (req, res) => {
 
 const deleteLiveSession = catchAsync(async (req, res) => {
   const result = await LiveSessionService.deleteLiveSession(req.params.id, req.user._id, req.user.role);
+  await NotificationService.dispatchLiveSessionCancelled(result.session, req.user._id);
 
   sendResponse(res, {
     statusCode: 200,
@@ -69,6 +73,29 @@ const getStudentLiveSessions = catchAsync(async (req, res) => {
   });
 });
 
+const startSession = catchAsync(async (req, res) => {
+  const result = await LiveSessionService.startLiveSession(req.params.id, req.user._id);
+  await NotificationService.dispatchLiveSessionStarted(result, req.user._id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: LIVE_SESSION_MESSAGES.SESSION_STARTED,
+    data: result,
+  });
+});
+
+const endSession = catchAsync(async (req, res) => {
+  const result = await LiveSessionService.endLiveSession(req.params.id, req.user._id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: LIVE_SESSION_MESSAGES.SESSION_ENDED,
+    data: result,
+  });
+});
+
 export const LiveSessionController = {
   createLiveSession,
   getLiveSessions,
@@ -76,4 +103,6 @@ export const LiveSessionController = {
   updateLiveSession,
   deleteLiveSession,
   getStudentLiveSessions,
+  startSession,
+  endSession,
 };

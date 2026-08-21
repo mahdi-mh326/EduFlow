@@ -76,6 +76,7 @@ const globalErrorHandler = (err, req, res, next) => {
     success: false,
     message,
     errors,
+    ...(err.data !== undefined && err.data !== null ? { data: err.data } : {}),
   });
 };
 

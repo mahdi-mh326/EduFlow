@@ -13,6 +13,9 @@ import noticeRoutes from "../modules/notice/notice.route.js";
 import liveSessionRoutes from "../modules/live-session/live-session.route.js";
 import attendanceRoutes from "../modules/attendance/attendance.route.js";
 import paymentRoutes from "../modules/payment/payment.route.js";
+import assignmentRoutes from "../modules/assignment/assignment.route.js";
+import quizRoutes from "../modules/quiz/quiz.route.js";
+import notificationRoutes from "../modules/notification/notification.route.js";
 
 const router = express.Router();
 
@@ -29,5 +32,8 @@ router.use("/notices", noticeRoutes);
 router.use("/live-sessions", liveSessionRoutes);
 router.use("/attendances", attendanceRoutes);
 router.use("/payments", paymentRoutes);
+router.use("/assignments", assignmentRoutes);
+router.use("/quizzes", quizRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

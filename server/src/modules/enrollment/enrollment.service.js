@@ -7,7 +7,7 @@ import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
-import { ENROLLMENT_MESSAGES, ENROLLMENT_STATUS } from "./enrollment.constant.js";
+import { ENROLLMENT_MESSAGES, ENROLLMENT_STATUS, PAYMENT_STATUS } from "./enrollment.constant.js";
 
 const findAvailableSection = (sections) => {
   for (let i = 0; i < sections.length; i++) {
@@ -18,7 +18,11 @@ const findAvailableSection = (sections) => {
   return null;
 };
 
-const createEnrollment = async ({ courseId, studentId }, createdBy) => {
+const createEnrollment = async ({ courseId, studentId, paymentStatus }, createdBy, callerRole) => {
+  if (callerRole === USER_ROLE.STUDENT && studentId !== createdBy) {
+    throw new ApiError(403, "You can only create enrollment for yourself");
+  }
+
   const student = await User.findOne({
     _id: studentId,
     isDeleted: { $ne: true },
@@ -92,6 +96,7 @@ const createEnrollment = async ({ courseId, studentId }, createdBy) => {
             classId: targetClass._id,
             sectionId: targetClass.sections[targetSectionIndex].name,
             status: ENROLLMENT_STATUS.ACTIVE,
+            paymentStatus: paymentStatus || PAYMENT_STATUS.PAID,
             createdBy,
           },
         ],
@@ -110,6 +115,14 @@ const getEnrollments = async (userId, userRole) => {
 
   if (userRole === USER_ROLE.STUDENT) {
     filter.studentId = userId;
+  } else if (userRole === USER_ROLE.TEACHER) {
+    const teacherClassIds = await Class.find({
+      teacherId: userId,
+      isDeleted: { $ne: true },
+    }).distinct("_id");
+    filter.classId = { $in: teacherClassIds };
+  } else if (userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.SUPER_ADMIN) {
+    // Admin and Super Admin see all enrollments
   }
 
   const enrollments = await Enrollment.find(filter)
@@ -149,6 +162,10 @@ const getEnrollmentById = async (id, userId, userRole) => {
   }
 
   if (userRole === USER_ROLE.STUDENT && enrollment.studentId._id.toString() !== userId.toString()) {
+    throw new ApiError(403, "You are not authorized to access this enrollment");
+  }
+
+  if (userRole === USER_ROLE.TEACHER && enrollment.classId.teacherId._id.toString() !== userId.toString()) {
     throw new ApiError(403, "You are not authorized to access this enrollment");
   }
 

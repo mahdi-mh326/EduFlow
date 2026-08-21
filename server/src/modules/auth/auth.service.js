@@ -208,6 +208,10 @@ const refreshAccessToken = async (refreshToken) => {
     throw new ApiError(401, AUTH_MESSAGES.USER_NOT_FOUND);
   }
 
+  if (user.status !== USER_STATUS.ACTIVE) {
+    throw new ApiError(403, AUTH_MESSAGES.ACCOUNT_NOT_ACTIVE);
+  }
+
   const accessToken = tokenUtils.generateAccessToken({
     id: user._id,
     email: user.email,

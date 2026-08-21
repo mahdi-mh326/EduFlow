@@ -9,7 +9,10 @@ import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
-import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import {
+  ENROLLMENT_STATUS,
+  PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
+} from "../enrollment/enrollment.constant.js";
 import { LIVE_SESSION_STATUS } from "../live-session/live-session.constant.js";
 import { ATTENDANCE_MESSAGES, ATTENDANCE_STATUS } from "./attendance.constant.js";
 
@@ -100,6 +103,7 @@ const startAttendance = async (liveSessionId, teacherId) => {
   const enrollments = await Enrollment.find({
     classId: session.classId,
     status: ENROLLMENT_STATUS.ACTIVE,
+    paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
     isDeleted: { $ne: true },
   })
     .populate("studentId", "fullName email phone")
@@ -146,6 +150,7 @@ const submitAttendance = async (liveSessionId, students, teacherId) => {
   const enrolledStudentIds = await Enrollment.find({
     classId: session.classId,
     status: ENROLLMENT_STATUS.ACTIVE,
+    paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
     isDeleted: { $ne: true },
   }).distinct("studentId");
 
@@ -225,28 +230,45 @@ const updateAttendance = async (id, payload, teacherId) => {
   return updatedAttendance;
 };
 
-const getStudentAttendance = async (studentId) => {
-  const attendances = await Attendance.find({
-    studentId,
-    isDeleted: { $ne: true },
-  })
-    .populate("courseId", "title slug")
-    .populate("classId", "batchName")
-    .populate("teacherId", "fullName email")
-    .populate("liveSessionId", "title scheduledDate startTime endTime")
-    .sort({ attendanceDate: -1 });
+const getStudentAttendance = async (studentId, page = 1, limit = 10) => {
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, parseInt(limit));
+  const skip = (pageNum - 1) * limitNum;
 
-  return attendances.map((attendance) => ({
-    _id: attendance._id,
-    course: attendance.courseId,
-    class: attendance.classId,
-    teacher: attendance.teacherId,
-    liveSession: attendance.liveSessionId,
-    attendanceDate: attendance.attendanceDate,
-    status: attendance.status,
-    checkInTime: attendance.checkInTime,
-    remarks: attendance.remarks,
-  }));
+  const [countResult, attendances] = await Promise.all([
+    Attendance.countDocuments({ studentId, isDeleted: { $ne: true } }),
+    Attendance.find({ studentId, isDeleted: { $ne: true } })
+      .sort({ attendanceDate: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("courseId", "title slug")
+      .populate("classId", "batchName")
+      .populate("teacherId", "fullName email")
+      .populate("liveSessionId", "title scheduledDate startTime endTime"),
+  ]);
+
+  const total = countResult;
+  const totalPages = Math.ceil(total / limitNum);
+
+  return {
+    meta: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+    },
+    data: attendances.map((attendance) => ({
+      _id: attendance._id,
+      course: attendance.courseId,
+      class: attendance.classId,
+      teacher: attendance.teacherId,
+      liveSession: attendance.liveSessionId,
+      attendanceDate: attendance.attendanceDate,
+      status: attendance.status,
+      checkInTime: attendance.checkInTime,
+      remarks: attendance.remarks,
+    })),
+  };
 };
 
 const getAttendances = async (query) => {

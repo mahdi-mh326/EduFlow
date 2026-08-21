@@ -3,9 +3,11 @@ import sendResponse from "../../shared/sendResponse.js";
 import { NoticeService } from "./notice.service.js";
 import { NOTICE_MESSAGES } from "./notice.constant.js";
 import { NoticeValidation } from "./notice.validation.js";
+import { NotificationService } from "../notification/notification.service.js";
 
 const createNotice = catchAsync(async (req, res) => {
   const result = await NoticeService.createNotice(req.body, req.user._id, req.user.role);
+  await NotificationService.dispatchNoticeCreated(result, req.user._id);
 
   sendResponse(res, {
     statusCode: 201,

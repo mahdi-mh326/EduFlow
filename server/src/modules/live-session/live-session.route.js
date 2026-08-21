@@ -14,22 +14,36 @@ router.get("/:id", authenticate, LiveSessionController.getLiveSessionById);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
   LiveSessionController.createLiveSession
 );
 
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
   LiveSessionController.updateLiveSession
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
   LiveSessionController.deleteLiveSession
+);
+
+router.post(
+  "/:id/start",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  LiveSessionController.startSession
+);
+
+router.post(
+  "/:id/end",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  LiveSessionController.endSession
 );
 
 export default router;

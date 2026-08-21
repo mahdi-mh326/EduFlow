@@ -3,14 +3,17 @@ import app from "./app.js";
 import connectDB from "./config/db.js";
 import env from "./config/env.js";
 import logger from "./shared/logger.js";
+import { initSocketServer } from "./socket/server.js";
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(env.port, () => {
+    const httpServer = app.listen(env.port, () => {
       logger.info(`🚀 Server running on port ${env.port}`);
     });
+
+    initSocketServer(httpServer);
   } catch (error) {
     logger.error(`❌ Server failed to start: ${error.message}`);
     process.exit(1);

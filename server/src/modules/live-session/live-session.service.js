@@ -8,7 +8,10 @@ import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
-import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import {
+  ENROLLMENT_STATUS,
+  PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
+} from "../enrollment/enrollment.constant.js";
 import { LIVE_SESSION_MESSAGES, LIVE_SESSION_STATUS } from "./live-session.constant.js";
 
 const generateMeetingRoom = (batchName, scheduledDate) => {
@@ -144,8 +147,13 @@ const getLiveSessions = async (userId, userRole) => {
     const enrolledClassIds = await Enrollment.find({
       studentId: userId,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     }).distinct("classId");
+
+    if (enrolledClassIds.length === 0) {
+      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
 
     filter.classId = { $in: enrolledClassIds };
   }
@@ -188,6 +196,7 @@ const getLiveSessionById = async (id, userId, userRole) => {
       studentId: userId,
       classId: session.classId._id,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 
@@ -276,15 +285,20 @@ const deleteLiveSession = async (id, userId, userRole) => {
     status: LIVE_SESSION_STATUS.CANCELLED,
   });
 
-  return { message: LIVE_SESSION_MESSAGES.SESSION_DELETED };
+  return { message: LIVE_SESSION_MESSAGES.SESSION_DELETED, session };
 };
 
 const getStudentLiveSessions = async (studentId) => {
   const enrolledClassIds = await Enrollment.find({
     studentId,
     status: ENROLLMENT_STATUS.ACTIVE,
+    paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
     isDeleted: { $ne: true },
   }).distinct("classId");
+
+  if (enrolledClassIds.length === 0) {
+    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  }
 
   const sessions = await LiveSession.find({
     classId: { $in: enrolledClassIds },
@@ -299,6 +313,66 @@ const getStudentLiveSessions = async (studentId) => {
   return sessions;
 };
 
+const startLiveSession = async (id, userId) => {
+  const session = await LiveSession.findOne({
+    _id: id,
+    isDeleted: { $ne: true },
+  });
+
+  if (!session) {
+    throw new ApiError(404, LIVE_SESSION_MESSAGES.SESSION_NOT_FOUND);
+  }
+
+  if (session.teacherId.toString() !== userId.toString()) {
+    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  }
+
+  if (session.status !== LIVE_SESSION_STATUS.SCHEDULED) {
+    throw new ApiError(400, LIVE_SESSION_MESSAGES.INVALID_SESSION_STATUS);
+  }
+
+  const updatedSession = await LiveSession.findByIdAndUpdate(
+    id,
+    { $set: { status: LIVE_SESSION_STATUS.LIVE } },
+    { new: true, runValidators: true }
+  )
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName startDate endDate")
+    .populate("teacherId", "fullName email");
+
+  return updatedSession;
+};
+
+const endLiveSession = async (id, userId) => {
+  const session = await LiveSession.findOne({
+    _id: id,
+    isDeleted: { $ne: true },
+  });
+
+  if (!session) {
+    throw new ApiError(404, LIVE_SESSION_MESSAGES.SESSION_NOT_FOUND);
+  }
+
+  if (session.teacherId.toString() !== userId.toString()) {
+    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  }
+
+  if (session.status !== LIVE_SESSION_STATUS.LIVE) {
+    throw new ApiError(400, LIVE_SESSION_MESSAGES.INVALID_SESSION_STATUS);
+  }
+
+  const updatedSession = await LiveSession.findByIdAndUpdate(
+    id,
+    { $set: { status: LIVE_SESSION_STATUS.COMPLETED } },
+    { new: true, runValidators: true }
+  )
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName startDate endDate")
+    .populate("teacherId", "fullName email");
+
+  return updatedSession;
+};
+
 export const LiveSessionService = {
   createLiveSession,
   getLiveSessions,
@@ -306,4 +380,6 @@ export const LiveSessionService = {
   updateLiveSession,
   deleteLiveSession,
   getStudentLiveSessions,
+  startLiveSession,
+  endLiveSession,
 };

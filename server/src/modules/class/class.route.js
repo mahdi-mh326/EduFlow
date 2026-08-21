@@ -12,7 +12,7 @@ const router = express.Router();
 router.get("/", optionalAuthenticate, ClassController.getClasses);
 router.get("/:id", optionalAuthenticate, ClassController.getClassById);
 
-router.use(authenticate, authorize(USER_ROLE.ADMIN));
+router.use(authenticate, authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN));
 
 router.post(
   "/",

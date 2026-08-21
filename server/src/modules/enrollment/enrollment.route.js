@@ -11,12 +11,17 @@ router.get("/", authenticate, EnrollmentController.getEnrollments);
 
 router.get("/:id", authenticate, EnrollmentController.getEnrollmentById);
 
-router.post("/", authenticate, EnrollmentController.createEnrollment);
+router.post(
+  "/",
+  authenticate,
+  authorize(USER_ROLE.STUDENT, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  EnrollmentController.createEnrollment
+);
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
   EnrollmentController.deleteEnrollment
 );
 

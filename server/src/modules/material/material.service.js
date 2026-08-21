@@ -8,7 +8,10 @@ import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
-import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import {
+  ENROLLMENT_STATUS,
+  PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
+} from "../enrollment/enrollment.constant.js";
 import { MATERIAL_MESSAGES } from "./material.constant.js";
 
 const createMaterial = async (payload, createdBy, userRole) => {
@@ -84,8 +87,13 @@ const getMaterials = async (userId, userRole) => {
     const enrolledClassIds = await Enrollment.find({
       studentId: userId,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     }).distinct("classId");
+
+    if (enrolledClassIds.length === 0) {
+      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
 
     filter.classId = { $in: enrolledClassIds };
   }
@@ -128,6 +136,7 @@ const getMaterialById = async (id, userId, userRole) => {
       studentId: userId,
       classId: material.classId._id,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 

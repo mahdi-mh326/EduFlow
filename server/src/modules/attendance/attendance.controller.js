@@ -65,13 +65,18 @@ const getAttendanceReport = catchAsync(async (req, res) => {
 });
 
 const getStudentAttendance = catchAsync(async (req, res) => {
-  const result = await AttendanceService.getStudentAttendance(req.user._id);
+  const result = await AttendanceService.getStudentAttendance(
+    req.user._id,
+    req.query.page,
+    req.query.limit
+  );
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: ATTENDANCE_MESSAGES.ATTENDANCES_FETCHED,
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

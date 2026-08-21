@@ -7,6 +7,7 @@ export const PAYMENT_STATUS = {
   PENDING: "pending",
   SUCCESS: "success",
   FAILED: "failed",
+  PAID: "paid",
 };
 
 export const ENROLLMENT_MESSAGES = {
