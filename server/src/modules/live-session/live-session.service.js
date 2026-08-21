@@ -152,7 +152,7 @@ const getLiveSessions = async (userId, userRole) => {
     }).distinct("classId");
 
     if (enrolledClassIds.length === 0) {
-      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_STUDENT);
     }
 
     filter.classId = { $in: enrolledClassIds };

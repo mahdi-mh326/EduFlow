@@ -8,7 +8,10 @@ import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
-import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import {
+  ENROLLMENT_STATUS,
+  PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
+} from "../enrollment/enrollment.constant.js";
 import { NOTICE_MESSAGES } from "./notice.constant.js";
 
 const createNotice = async (payload, createdBy, userRole) => {
@@ -92,6 +95,7 @@ const getNotices = async (userId, userRole) => {
     const enrolledClassIds = await Enrollment.find({
       studentId: userId,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     }).distinct("classId");
 
@@ -140,11 +144,12 @@ const getNoticeById = async (id, userId, userRole) => {
         studentId: userId,
         classId: notice.classId._id,
         status: ENROLLMENT_STATUS.ACTIVE,
+        paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
         isDeleted: { $ne: true },
       });
 
       if (!enrolled) {
-        throw new ApiError(403, NOTICE_MESSAGES.UNAUTHORIZED_TEACHER);
+        throw new ApiError(403, NOTICE_MESSAGES.UNAUTHORIZED_STUDENT);
       }
     }
     return notice;

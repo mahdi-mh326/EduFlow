@@ -206,6 +206,7 @@ const getEligibleStudentIds = async (classId) => {
     return await Enrollment.find({
       classId: rawClassId,
       status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     }).distinct("studentId");
   }

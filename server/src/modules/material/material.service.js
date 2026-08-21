@@ -92,7 +92,7 @@ const getMaterials = async (userId, userRole) => {
     }).distinct("classId");
 
     if (enrolledClassIds.length === 0) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
+      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_STUDENT);
     }
 
     filter.classId = { $in: enrolledClassIds };

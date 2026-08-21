@@ -15,6 +15,7 @@ export const LIVE_SESSION_MESSAGES = {
   SESSION_ENDED: "Live session ended successfully",
   SESSION_NOT_FOUND: "Live session not found",
   UNAUTHORIZED_TEACHER: "You are not authorized to access this session",
+  UNAUTHORIZED_STUDENT: "You are not authorized to access this session",
   CLASS_NOT_FOUND: "Class not found",
   TEACHER_NOT_FOUND: "Teacher not found",
   COURSE_NOT_FOUND: "Course not found",

@@ -6,6 +6,7 @@ export const MATERIAL_MESSAGES = {
   MATERIAL_DELETED: "Material deleted successfully",
   MATERIAL_NOT_FOUND: "Material not found",
   UNAUTHORIZED_TEACHER: "You are not authorized to access this material",
+  UNAUTHORIZED_STUDENT: "You are not authorized to access this material",
 };
 
 export const MATERIAL_VISIBILITY = {

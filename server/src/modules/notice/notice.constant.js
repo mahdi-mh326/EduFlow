@@ -6,6 +6,7 @@ export const NOTICE_MESSAGES = {
   NOTICE_DELETED: "Notice deleted successfully",
   NOTICE_NOT_FOUND: "Notice not found",
   UNAUTHORIZED_TEACHER: "You are not authorized to access this notice",
+  UNAUTHORIZED_STUDENT: "You are not authorized to access this notice",
 };
 
 export const NOTICE_PRIORITY = {

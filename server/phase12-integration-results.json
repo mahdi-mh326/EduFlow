@@ -1,0 +1,320 @@
+[
+  {
+    "name": "Server health check",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Admin login",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Teacher A login",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Teacher B login",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Student1 login",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Student2 login",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Create course",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Publish course",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Create class A",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Create class B",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Enroll Student1 in Class A",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Enroll Student2 in Class A",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Student1 initiate payment",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Re-initiate payment for pending (updates tranId)",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Student2 initiate payment",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create material",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create notice",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create live session",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create assignment",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create quiz",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create question",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Pending student denied assignment access",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Pending student denied quiz access",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Pending student denied live session access",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Pending student denied material access",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Pending student denied notice access",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Student1 cannot access Student2 enrollment",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Student can see published class (discovery)",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Teacher can see published class (discovery)",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Student can see published courses (discovery)",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Teacher B cannot access Teacher A assignment",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Teacher B cannot create material in Teacher A class",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Teacher B cannot create notice in Teacher A class",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Missing courseId enrollment",
+    "actual": 404,
+    "expected": 404,
+    "pass": true
+  },
+  {
+    "name": "Invalid course ID",
+    "actual": 404,
+    "expected": 404,
+    "pass": true
+  },
+  {
+    "name": "Auth rate limit triggers 429",
+    "actual": true,
+    "expected": true,
+    "pass": true
+  },
+  {
+    "name": "Create course for self-enrollment",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Publish course 2",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Create class C",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Student2 self-enroll",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Student2 cannot enroll other student (409 self-override)",
+    "actual": 409,
+    "expected": 409,
+    "pass": true
+  },
+  {
+    "name": "Teacher B cannot create material in Teacher A class",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Teacher B cannot create notice in Teacher A class",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Invalid payment callback returns 404",
+    "actual": 404,
+    "expected": 404,
+    "pass": true
+  },
+  {
+    "name": "Teacher A soft delete material",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Admin soft delete enrollment",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create draft quiz",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Student cannot see draft quiz",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Teacher A create draft assignment",
+    "actual": 201,
+    "expected": 201,
+    "pass": true
+  },
+  {
+    "name": "Student cannot see draft assignment",
+    "actual": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "name": "Student1 sees own payments",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "name": "Student2 cannot access Student1 notification",
+    "actual": 404,
+    "expected": 404,
+    "pass": true
+  },
+  {
+    "name": "Admin soft delete course",
+    "actual": 200,
+    "expected": 200,
+    "pass": true
+  }
+]

@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import {
+  ENROLLMENT_STATUS,
+  PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
+} from "../enrollment/enrollment.constant.js";
 import Quiz from "./quiz.model.js";
 import Class from "../class/class.model.js";
 import Course from "../course/course.model.js";
@@ -126,8 +130,8 @@ const getQuizzes = async (userId, userRole, query = {}) => {
   } else if (userRole === USER_ROLE.STUDENT) {
     const enrolledClassIds = await mongoose.model("Enrollment").distinct("classId", {
       studentId: userId,
-      status: "active",
-      paymentStatus: "paid",
+      status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 
@@ -205,13 +209,13 @@ const getQuizById = async (id, userId, userRole) => {
     const enrolled = await mongoose.model("Enrollment").findOne({
       studentId: userId,
       classId: quiz.classId._id,
-      status: "active",
-      paymentStatus: "paid",
+      status: ENROLLMENT_STATUS.ACTIVE,
+      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 
     if (!enrolled) {
-      throw new ApiError(403, QUIZ_MESSAGES.UNAUTHORIZED_TEACHER);
+      throw new ApiError(403, QUIZ_MESSAGES.UNAUTHORIZED_STUDENT);
     }
   }
 

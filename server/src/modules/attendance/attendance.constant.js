@@ -14,6 +14,7 @@ export const ATTENDANCE_MESSAGES = {
   ATTENDANCE_DELETED: "Attendance deleted successfully",
   ATTENDANCE_NOT_FOUND: "Attendance not found",
   UNAUTHORIZED_TEACHER: "You are not authorized to access this attendance",
+  UNAUTHORIZED_STUDENT: "You are not authorized to access this attendance",
   CLASS_NOT_FOUND: "Class not found",
   TEACHER_NOT_FOUND: "Teacher not found",
   COURSE_NOT_FOUND: "Course not found",
