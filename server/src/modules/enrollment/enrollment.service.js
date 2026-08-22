@@ -23,6 +23,14 @@ const createEnrollment = async ({ courseId, studentId, paymentStatus }, createdB
     throw new ApiError(403, "You can only create enrollment for yourself");
   }
 
+  if (callerRole === USER_ROLE.STUDENT && paymentStatus) {
+    throw new ApiError(400, "Students cannot set payment status during enrollment");
+  }
+
+  const effectivePaymentStatus = callerRole === USER_ROLE.STUDENT
+    ? PAYMENT_STATUS.PENDING
+    : (paymentStatus || PAYMENT_STATUS.PENDING);
+
   const student = await User.findOne({
     _id: studentId,
     isDeleted: { $ne: true },
@@ -96,7 +104,7 @@ const createEnrollment = async ({ courseId, studentId, paymentStatus }, createdB
             classId: targetClass._id,
             sectionId: targetClass.sections[targetSectionIndex].name,
             status: ENROLLMENT_STATUS.ACTIVE,
-            paymentStatus: paymentStatus || PAYMENT_STATUS.PAID,
+            paymentStatus: effectivePaymentStatus,
             createdBy,
           },
         ],

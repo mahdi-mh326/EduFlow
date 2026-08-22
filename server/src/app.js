@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+import env from "./config/env.js";
+
 import sendResponse from "./shared/sendResponse.js";
 import notFound from "./middlewares/notFound.js";
 import globalErrorHandler from "./middlewares/globalErrorHandler.js";
@@ -19,12 +21,14 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: true,
+    origin: env.nodeEnv === "production" ? (env.clientUrl || "http://localhost:5173") : true,
     credentials: true,
   })
 );
 
-app.use(morgan("dev"));
+if (env.nodeEnv === "development") {
+  app.use(morgan("dev"));
+}
 
 app.use(express.json());
 

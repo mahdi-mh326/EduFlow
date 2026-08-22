@@ -24,15 +24,11 @@ const sendOTP = async (email) => {
     { upsert: true, new: true }
   );
 
-  console.log("OTP saved:", result);
-
   return otp;
 };
 
 const verifyOTP = async (email, otp) => {
-  console.log("Verifying OTP for email:", email);
   const otpRecord = await OTP.findOne({ email });
-  console.log("OTP record found:", otpRecord);
 
   if (!otpRecord) {
     throw new ApiError(404, "OTP not found");

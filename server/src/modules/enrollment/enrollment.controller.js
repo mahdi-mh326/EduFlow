@@ -1,18 +1,22 @@
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
+import ApiError from "../../shared/ApiError.js";
 import { EnrollmentService } from "./enrollment.service.js";
 import { ENROLLMENT_MESSAGES } from "./enrollment.constant.js";
 import { NotificationService } from "../notification/notification.service.js";
 
 const createEnrollment = catchAsync(async (req, res) => {
-  let { studentId, courseId, paymentStatus } = req.body;
+  let { studentId, courseId } = req.body;
 
   if (req.user.role === "student") {
+    if (studentId && studentId !== req.user._id.toString()) {
+      throw new ApiError(403, "You can only create enrollment for yourself");
+    }
     studentId = req.user._id;
   }
 
   const result = await EnrollmentService.createEnrollment(
-    { courseId, studentId, paymentStatus },
+    { courseId, studentId },
     req.user._id,
     req.user.role
   );

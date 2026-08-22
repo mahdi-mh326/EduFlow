@@ -2,7 +2,7 @@ import rateLimit from "express-rate-limit";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   message: {
     success: false,
     message: "Too many authentication attempts, please try again after 15 minutes",
@@ -14,7 +14,7 @@ const authLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 10,
   message: {
     success: false,
     message: "Too many registration attempts, please try again after 1 hour",

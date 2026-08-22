@@ -78,8 +78,6 @@ const initiateSslCommerzPayment = async (payload) => {
   const maskedPassword = `${storePassword.slice(0, 2)}****${storePassword.slice(-2)}`;
 
   logger.info(`[SSLCommerz] store_id: ${storeId}`);
-  logger.info(`[SSLCommerz] password length: ${storePassword.length}`);
-  logger.info(`[SSLCommerz] password (masked): ${maskedPassword}`);
   logger.info(`[SSLCommerz] endpoint: ${initUrl}`);
   logger.info(`[SSLCommerz] transaction_id: ${payload.transactionId}`);
   logger.info(`[SSLCommerz] transaction_id length: ${payload.transactionId.length}`);

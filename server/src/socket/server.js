@@ -81,7 +81,7 @@ const canAccessClassroom = async (user, sessionId) => {
 export const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: true,
+      origin: env.nodeEnv === "production" ? (env.clientUrl || "http://localhost:5173") : true,
       credentials: true,
     },
   });
@@ -107,7 +107,7 @@ export const initSocketServer = (httpServer) => {
 
   io.on("connection", (socket) => {
     const user = socket.user;
-    console.log(`Socket connected: ${user.fullName} (${user._id})`);
+    logger.info(`Socket connected: ${user.fullName} (${user._id})`);
 
     socket.on("join-room", async (sessionId) => {
       try {
@@ -194,7 +194,7 @@ export const initSocketServer = (httpServer) => {
           participants: classroom.getParticipants(roomId),
         });
       }
-      console.log(`Socket disconnected: ${user.fullName} (${user._id})`);
+      logger.info(`Socket disconnected: ${user.fullName} (${user._id})`);
     });
   });
 

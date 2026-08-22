@@ -28,8 +28,8 @@ const registerValidationSchema = z.object({
     dateOfBirth: z
       .string()
       .optional(),
-  }),
-});
+  }).strict(),
+}).strict();
 
 const verifyEmailValidationSchema = z.object({
   body: z.object({
