@@ -82,10 +82,14 @@ const canAccessClassroom = async (user, sessionId) => {
 export const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: env.nodeEnv === "production" ? (env.clientUrl || "http://localhost:5173") : true,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        return callback(null, true);
+      },
       credentials: true,
     },
   });
+
 
   io.use(async (socket, next) => {
     try {

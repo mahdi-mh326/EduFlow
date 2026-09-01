@@ -25,12 +25,31 @@ app.use(
   })
 );
 
+const allowedOrigins = [
+  env.clientUrl,
+  env.clientUrl ? env.clientUrl.replace(/\/$/, "") : null,
+  "https://mahdi-edu-flow.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.nodeEnv === "production" ? (env.clientUrl || "http://localhost:5173") : true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
+      if (
+        allowedOrigins.some((o) => o.replace(/\/$/, "") === cleanOrigin) ||
+        origin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive in production to prevent deployment breakage
+    },
     credentials: true,
   })
 );
+
 
 if (env.nodeEnv === "development") {
   app.use(morgan("dev"));
