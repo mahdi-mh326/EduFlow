@@ -7,8 +7,17 @@ const chatValidationSchema = z.object({
       .string()
       .min(1, "Message is required")
       .max(CHATBOT_MAX_MESSAGE_LENGTH, `Message must be at most ${CHATBOT_MAX_MESSAGE_LENGTH} characters`),
+    history: z
+      .array(
+        z.object({
+          role: z.enum(["user", "model", "assistant"]),
+          content: z.string(),
+        })
+      )
+      .optional(),
   }),
 });
+
 
 const chatHistoryQuerySchema = z.object({
   query: z.object({

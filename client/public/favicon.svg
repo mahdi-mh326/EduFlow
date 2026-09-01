@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="efGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#EFF6FF" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.25" flood-color="#1D4ED8" />
+    </filter>
+  </defs>
+  <!-- Background Rounded Shield / Tile -->
+  <rect width="64" height="64" rx="16" fill="url(#efGradient)" />
+  <!-- Academic Cap / Flow Emblem -->
+  <g filter="url(#shadow)" fill="url(#capGradient)">
+    <!-- Cap Diamond -->
+    <polygon points="32,16 52,26 32,36 12,26" />
+    <!-- Cap Base -->
+    <path d="M20,31.5 L20,40 C20,44.5 25.4,48 32,48 C38.6,48 44,44.5 44,40 L44,31.5 C40.5,33.5 36.4,34.5 32,34.5 C27.6,34.5 23.5,33.5 20,31.5 Z" />
+    <!-- Tassel -->
+    <path d="M48,27.5 L50.5,37 C49.5,38 48,39 48,42 C48,43 49,44 50,44 C51,44 52,43 52,42 C52,39 50.5,38 49.5,37 L48.5,27.5 Z" />
+  </g>
+</svg>

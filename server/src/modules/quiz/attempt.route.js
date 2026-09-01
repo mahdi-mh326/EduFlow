@@ -41,7 +41,7 @@ router.post(
 router.get(
   "/:quizId/attempts",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   AttemptController.getAttempts
 );
 

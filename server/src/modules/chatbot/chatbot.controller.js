@@ -6,7 +6,7 @@ import { CHATBOT_MESSAGES, CHATBOT_STATUS_CODES } from "./chatbot.constant.js";
 
 const sendChat = catchAsync(async (req, res) => {
   const user = req.user;
-  const { message } = req.body;
+  const { message, history } = req.body;
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     return sendResponse(res, {
@@ -17,11 +17,19 @@ const sendChat = catchAsync(async (req, res) => {
     });
   }
 
+  const userId = user?._id || null;
+  const userRole = user?.role || "guest";
+
   const queryDomain = ChatbotService.detectQueryDomain(message);
-  const context = await ChatbotService.retrieveAuthorizedContext(user._id, user.role, queryDomain);
+  const context = await ChatbotService.retrieveAuthorizedContext(userId, userRole, queryDomain);
   const formattedContext = ChatbotService.formatContextForAI(context);
 
-  const aiResult = await AIService.generateReply(ChatbotService.SYSTEM_PROMPT, message, formattedContext);
+  const aiResult = await AIService.generateReply(
+    ChatbotService.SYSTEM_PROMPT,
+    message,
+    formattedContext,
+    Array.isArray(history) ? history : []
+  );
   const sources = ChatbotService.getSourcesFromContext(context);
 
   sendResponse(res, {
@@ -32,6 +40,7 @@ const sendChat = catchAsync(async (req, res) => {
       reply: aiResult.reply,
       sources,
       queryDomain,
+      modelUsed: aiResult.modelUsed || "gemini-3.1-flash-lite",
     },
   });
 });
@@ -39,3 +48,4 @@ const sendChat = catchAsync(async (req, res) => {
 export const ChatbotController = {
   sendChat,
 };
+

@@ -1,0 +1,109 @@
+import { useState, type FormEvent } from 'react'
+import { Button, TextArea, ConfirmDialog } from '@/components'
+
+interface SubmissionFormProps {
+  onSubmit: (content: string) => Promise<void>
+  submitLabel?: string
+  submitting?: boolean
+  helperText?: string
+  confirmTitle?: string
+  confirmMessage?: string
+  confirmLabel?: string
+  rows?: number
+}
+
+export function SubmissionForm({
+  onSubmit,
+  submitLabel = 'Submit Assignment',
+  submitting = false,
+  helperText,
+  confirmTitle = 'Submit Assignment?',
+  confirmMessage = 'Once submitted, your assignment will be sent to your teacher. Please review your answer before confirming.',
+  confirmLabel = 'Submit Assignment',
+  rows = 6,
+}: SubmissionFormProps) {
+  const [content, setContent] = useState('')
+  const [localError, setLocalError] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    setLocalError(null)
+
+    const trimmed = content.trim()
+    if (!trimmed) {
+      setLocalError('Please write your answer before submitting.')
+      return
+    }
+
+    setShowConfirm(true)
+  }
+
+  const handleConfirm = async () => {
+    setShowConfirm(false)
+    setIsSubmitting(true)
+    setSubmitted(true)
+
+    try {
+      await onSubmit(content.trim())
+    } catch {
+      setSubmitted(false)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCancelConfirm = () => {
+    setShowConfirm(false)
+  }
+
+  if (submitted && !isSubmitting) {
+    return null
+  }
+
+  return (
+    <>
+      <form onSubmit={handleFormSubmit} className="space-y-4">
+        <TextArea
+          id="submission-content"
+          label="Your Answer"
+          placeholder="Write your submission here..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          required
+          rows={rows}
+          error={localError || undefined}
+          helperText={helperText}
+          disabled={submitting || isSubmitting}
+        />
+
+        <div className="flex items-center gap-3">
+          <Button
+            type="submit"
+            variant="primary"
+            loading={isSubmitting || submitting}
+            disabled={isSubmitting || submitting}
+          >
+            {isSubmitting ? 'Submitting...' : submitLabel}
+          </Button>
+          {(isSubmitting || submitting) && (
+            <p className="text-xs text-text-muted">Please do not close this page while submitting.</p>
+          )}
+        </div>
+      </form>
+
+      <ConfirmDialog
+        open={showConfirm}
+        onClose={handleCancelConfirm}
+        onConfirm={handleConfirm}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmLabel={confirmLabel}
+        cancelLabel="Cancel"
+        loading={isSubmitting}
+      />
+    </>
+  )
+}

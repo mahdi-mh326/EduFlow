@@ -45,6 +45,20 @@ router.post(
 );
 
 router.post(
+  "/forgot-password",
+  authLimiter,
+  validateRequest(AuthValidation.forgotPasswordValidationSchema),
+  AuthController.forgotPassword
+);
+
+router.post(
+  "/reset-password",
+  authLimiter,
+  validateRequest(AuthValidation.resetPasswordValidationSchema),
+  AuthController.resetPassword
+);
+
+router.post(
   "/set-password",
   authenticate,
   validateRequest(AuthValidation.setPasswordValidationSchema),
@@ -56,3 +70,4 @@ router.post("/refresh-token", AuthController.refreshToken);
 router.post("/logout", AuthController.logout);
 
 export default router;
+

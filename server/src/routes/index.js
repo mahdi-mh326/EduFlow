@@ -18,6 +18,7 @@ import paymentRoutes from "../modules/payment/payment.route.js";
 import assignmentRoutes from "../modules/assignment/assignment.route.js";
 import quizRoutes from "../modules/quiz/quiz.route.js";
 import notificationRoutes from "../modules/notification/notification.route.js";
+import savedCourseRoutes from "../modules/saved-course/saved-course.route.js";
 
 const router = express.Router();
 
@@ -38,5 +39,7 @@ router.use("/payments", paymentRoutes);
 router.use("/assignments", assignmentRoutes);
 router.use("/quizzes", quizRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/saved-courses", savedCourseRoutes);
 
 export default router;
+

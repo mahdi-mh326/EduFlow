@@ -11,6 +11,7 @@ import {
 } from "../modules/enrollment/enrollment.constant.js";
 import { LIVE_SESSION_STATUS } from "../modules/live-session/live-session.constant.js";
 import { classroom } from "./classroom.js";
+import logger from "../shared/logger.js";
 
 const verifySocketToken = async (token) => {
   try {
@@ -152,6 +153,7 @@ export const initSocketServer = (httpServer) => {
           socket.to(roomId).emit("offer", {
             ...payload,
             from: user._id.toString(),
+            callerName: user.fullName,
           });
         });
 
@@ -166,6 +168,36 @@ export const initSocketServer = (httpServer) => {
           socket.to(roomId).emit("ice-candidate", {
             ...payload,
             from: user._id.toString(),
+          });
+        });
+
+        socket.on("media-toggle", (payload) => {
+          classroom.updateParticipantState(roomId, user._id.toString(), payload);
+          socket.to(roomId).emit("media-toggle", {
+            userId: user._id.toString(),
+            ...payload,
+          });
+        });
+
+        socket.on("raise-hand", (payload) => {
+          classroom.updateParticipantState(roomId, user._id.toString(), {
+            isHandRaised: payload.isHandRaised,
+          });
+          io.to(roomId).emit("raise-hand", {
+            userId: user._id.toString(),
+            userName: user.fullName,
+            isHandRaised: payload.isHandRaised,
+          });
+        });
+
+        socket.on("chat-message", (payload) => {
+          io.to(roomId).emit("chat-message", {
+            id: new Date().getTime().toString(),
+            senderId: user._id.toString(),
+            senderName: user.fullName,
+            senderRole: role,
+            text: payload.text,
+            createdAt: new Date().toISOString(),
           });
         });
 
@@ -184,6 +216,7 @@ export const initSocketServer = (httpServer) => {
         socket.emit("error", "Failed to join classroom");
       }
     });
+
 
     socket.on("disconnect", async () => {
       const roomId = socket.data.roomId;

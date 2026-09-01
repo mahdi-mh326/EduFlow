@@ -20,7 +20,16 @@ const updateSubmissionSchema = z.object({
     }),
 });
 
+const gradeSubmissionSchema = z.object({
+  body: z.object({
+    marks: z.number().min(0, "Marks cannot be negative"),
+    feedback: z.string().trim().optional(),
+  }),
+});
+
 export const SubmissionValidation = {
   createSubmissionSchema,
   updateSubmissionSchema,
+  gradeSubmissionSchema,
 };
+

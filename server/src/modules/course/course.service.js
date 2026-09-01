@@ -1,7 +1,10 @@
+import path from "path";
+import fs from "fs";
 import Course from "./course.model.js";
 import ApiError from "../../shared/ApiError.js";
 import { COURSE_STATUS, COURSE_MESSAGES } from "./course.constant.js";
 import { USER_ROLE } from "../user/user.constant.js";
+
 
 const toSlug = (str) =>
   str
@@ -100,8 +103,9 @@ const getAllCourses = async (query, user) => {
       .sort(sort)
       .skip(skip)
       .limit(limitNum)
-      .select("-isDeleted -deletedAt -description"),
+      .select("-isDeleted -deletedAt"),
   ]);
+
 
   const total = countResult;
   const totalPages = Math.ceil(total / limitNum);
@@ -213,6 +217,46 @@ const softDeleteCourse = async (id) => {
   return { message: COURSE_MESSAGES.COURSE_DELETED };
 };
 
+const uploadPoster = async (courseId, file) => {
+  if (!file) throw new ApiError(400, "No image file provided.");
+  const posterUrl = `/uploads/courses/${file.filename}`;
+
+  if (courseId && courseId !== "new") {
+    const course = await Course.findOne({ _id: courseId, isDeleted: { $ne: true } });
+    if (course) {
+      if (course.thumbnail && course.thumbnail.startsWith("/uploads/courses/")) {
+        const oldPath = path.join(process.cwd(), "public", course.thumbnail.replace(/^\//, ""));
+        if (fs.existsSync(oldPath)) {
+          try { fs.unlinkSync(oldPath); } catch {}
+        }
+      }
+      course.thumbnail = posterUrl;
+      course.banner = posterUrl;
+      await course.save();
+    }
+  }
+
+  return { posterUrl };
+};
+
+const deletePoster = async (courseId) => {
+  const course = await Course.findOne({ _id: courseId, isDeleted: { $ne: true } });
+  if (!course) throw new ApiError(404, COURSE_MESSAGES.COURSE_NOT_FOUND);
+
+  if (course.thumbnail && course.thumbnail.startsWith("/uploads/courses/")) {
+    const oldPath = path.join(process.cwd(), "public", course.thumbnail.replace(/^\//, ""));
+    if (fs.existsSync(oldPath)) {
+      try { fs.unlinkSync(oldPath); } catch {}
+    }
+  }
+
+  course.thumbnail = "";
+  course.banner = "";
+  await course.save();
+
+  return { message: "Poster deleted successfully." };
+};
+
 export const CourseService = {
   createCourse,
   getAllCourses,
@@ -222,4 +266,7 @@ export const CourseService = {
   publishCourse,
   featureCourse,
   softDeleteCourse,
+  uploadPoster,
+  deletePoster,
 };
+

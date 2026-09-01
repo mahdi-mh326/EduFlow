@@ -16,8 +16,21 @@ import { NOTICE_MESSAGES } from "./notice.constant.js";
 
 const createNotice = async (payload, createdBy, userRole) => {
   const {
-    courseId, classId, teacherId, title, description, priority, publishDate, expiryDate,
+    courseId,
+    classId,
+    teacherId,
+    targetAudience,
+    title,
+    description,
+    attachmentUrl,
+    isPinned,
+    priority,
+    publishDate,
+    expiryDate,
   } = payload;
+
+  let resolvedTeacherId = teacherId || null;
+  let resolvedTargetAudience = targetAudience || "all";
 
   if (userRole === USER_ROLE.TEACHER) {
     if (!classId) {
@@ -34,7 +47,8 @@ const createNotice = async (payload, createdBy, userRole) => {
       throw new ApiError(403, NOTICE_MESSAGES.UNAUTHORIZED_TEACHER);
     }
 
-    payload.teacherId = createdBy;
+    resolvedTeacherId = createdBy;
+    resolvedTargetAudience = "students";
   }
 
   if (courseId) {
@@ -57,31 +71,45 @@ const createNotice = async (payload, createdBy, userRole) => {
     if (!cls) {
       throw new ApiError(404, "Class not found");
     }
+    if (!resolvedTeacherId && cls.teacherId) {
+      resolvedTeacherId = cls.teacherId;
+    }
   }
 
-  const teacher = await User.findOne({
-    _id: payload.teacherId,
-    role: USER_ROLE.TEACHER,
-    isDeleted: { $ne: true },
-  });
+  if (resolvedTeacherId) {
+    const teacher = await User.findOne({
+      _id: resolvedTeacherId,
+      role: USER_ROLE.TEACHER,
+      isDeleted: { $ne: true },
+    });
 
-  if (!teacher) {
-    throw new ApiError(404, "Teacher not found");
+    if (!teacher) {
+      throw new ApiError(404, "Teacher not found");
+    }
   }
 
   const notice = await Notice.create({
     courseId: courseId || null,
     classId: classId || null,
-    teacherId: payload.teacherId,
+    teacherId: resolvedTeacherId || null,
+    targetAudience: resolvedTargetAudience,
     title,
     description: description || "",
+    attachmentUrl: attachmentUrl || "",
+    isPinned: Boolean(isPinned),
     priority: priority || "medium",
     publishDate: publishDate || new Date(),
     expiryDate: expiryDate || null,
     createdBy,
   });
 
-  return notice;
+  const populated = await Notice.findById(notice._id)
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName")
+    .populate("teacherId", "fullName email avatar")
+    .populate("createdBy", "fullName email role");
+
+  return populated;
 };
 
 const getNotices = async (userId, userRole) => {
@@ -90,7 +118,10 @@ const getNotices = async (userId, userRole) => {
   if (userRole === USER_ROLE.ADMIN) {
     // Admin sees all notices
   } else if (userRole === USER_ROLE.TEACHER) {
-    filter.teacherId = userId;
+    filter.$or = [
+      { teacherId: userId },
+      { classId: null, targetAudience: { $in: ["all", "teachers"] } },
+    ];
   } else if (userRole === USER_ROLE.STUDENT) {
     const enrolledClassIds = await Enrollment.find({
       studentId: userId,
@@ -101,18 +132,20 @@ const getNotices = async (userId, userRole) => {
 
     filter.$or = [
       { classId: { $in: enrolledClassIds } },
-      { classId: null, courseId: null },
+      { classId: null, courseId: null, targetAudience: { $in: ["all", "students"] } },
     ];
   }
 
   const notices = await Notice.find(filter)
     .populate("courseId", "title slug")
     .populate("classId", "batchName")
-    .populate("teacherId", "fullName email")
-    .sort({ publishDate: -1 });
+    .populate("teacherId", "fullName email avatar")
+    .populate("createdBy", "fullName email role")
+    .sort({ isPinned: -1, publishDate: -1, createdAt: -1 });
 
   return notices;
 };
+
 
 const getNoticeById = async (id, userId, userRole) => {
   const notice = await Notice.findOne({
@@ -132,11 +165,12 @@ const getNoticeById = async (id, userId, userRole) => {
   }
 
   if (userRole === USER_ROLE.TEACHER) {
-    if (notice.teacherId._id.toString() !== userId.toString()) {
+    if (notice.teacherId?._id?.toString() !== userId.toString()) {
       throw new ApiError(403, NOTICE_MESSAGES.UNAUTHORIZED_TEACHER);
     }
     return notice;
   }
+
 
   if (userRole === USER_ROLE.STUDENT) {
     if (notice.classId && notice.classId._id) {

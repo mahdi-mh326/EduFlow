@@ -5,9 +5,7 @@ import Course from "../course/course.model.js";
 import Class from "../class/class.model.js";
 import Enrollment from "../enrollment/enrollment.model.js";
 import ApiError from "../../shared/ApiError.js";
-import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
-import { COURSE_STATUS } from "../course/course.constant.js";
-import { CLASS_STATUS } from "../class/class.constant.js";
+import { USER_ROLE } from "../user/user.constant.js";
 import {
   ENROLLMENT_STATUS,
   PAYMENT_STATUS as ENROLLMENT_PAYMENT_STATUS,
@@ -15,73 +13,55 @@ import {
 import { MATERIAL_MESSAGES } from "./material.constant.js";
 
 const createMaterial = async (payload, createdBy, userRole) => {
-  const {
-    courseId, classId, teacherId, title, description, fileUrl, fileType, visibility,
-  } = payload;
-
-  if (userRole === USER_ROLE.TEACHER) {
-    const isOwnClass = await Class.findOne({
-      _id: classId,
-      teacherId: createdBy,
-      isDeleted: { $ne: true },
-    });
-
-    if (!isOwnClass) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
-    }
-
-    payload.teacherId = createdBy;
+  if (userRole !== USER_ROLE.TEACHER) {
+    throw new ApiError(403, "Only the assigned teacher of a class can upload study materials.");
   }
 
-  const course = await Course.findOne({
-    _id: courseId,
-    isDeleted: { $ne: true },
-  });
+  const { classId, title, description, fileUrl, fileType, visibility } = payload;
 
-  if (!course) {
-    throw new ApiError(404, "Course not found");
+  if (!classId) {
+    throw new ApiError(400, "Class ID is required to upload materials.");
   }
 
+  // Ensure the teacher is specifically assigned to this class
   const cls = await Class.findOne({
     _id: classId,
+    teacherId: createdBy,
     isDeleted: { $ne: true },
   });
 
   if (!cls) {
-    throw new ApiError(404, "Class not found");
-  }
-
-  const teacher = await User.findOne({
-    _id: payload.teacherId,
-    role: USER_ROLE.TEACHER,
-    isDeleted: { $ne: true },
-  });
-
-  if (!teacher) {
-    throw new ApiError(404, "Teacher not found");
+    throw new ApiError(403, "You can only upload study materials for classes assigned to you.");
   }
 
   const material = await Material.create({
-    courseId,
-    classId,
-    teacherId: payload.teacherId,
+    courseId: cls.courseId,
+    classId: cls._id,
+    teacherId: createdBy,
     title,
     description: description || "",
     fileUrl,
-    fileType,
+    fileType: fileType || "pdf",
     visibility: visibility || "public",
     createdBy,
   });
 
-  return material;
+  const populated = await Material.findById(material._id)
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName")
+    .populate("teacherId", "fullName email avatar");
+
+  return populated;
 };
 
-const getMaterials = async (userId, userRole) => {
+const getMaterials = async (userId, userRole, query = {}) => {
   const filter = { isDeleted: { $ne: true } };
 
-  if (userRole === USER_ROLE.ADMIN) {
-    // Admin sees all
-  } else if (userRole === USER_ROLE.TEACHER) {
+  if (query.classId) {
+    filter.classId = query.classId;
+  }
+
+  if (userRole === USER_ROLE.TEACHER) {
     filter.teacherId = userId;
   } else if (userRole === USER_ROLE.STUDENT) {
     const enrolledClassIds = await Enrollment.find({
@@ -92,16 +72,26 @@ const getMaterials = async (userId, userRole) => {
     }).distinct("classId");
 
     if (enrolledClassIds.length === 0) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_STUDENT);
+      return [];
     }
 
-    filter.classId = { $in: enrolledClassIds };
+    if (filter.classId) {
+      const isAllowed = enrolledClassIds.some(
+        (cId) => cId && cId.toString() === filter.classId.toString()
+      );
+      if (!isAllowed) return [];
+    } else {
+      filter.classId = { $in: enrolledClassIds };
+    }
+  } else {
+    // Admin does not handle or manage materials
+    return [];
   }
 
   const materials = await Material.find(filter)
     .populate("courseId", "title slug")
     .populate("classId", "batchName")
-    .populate("teacherId", "fullName email")
+    .populate("teacherId", "fullName email avatar")
     .sort({ createdAt: -1 });
 
   return materials;
@@ -114,18 +104,14 @@ const getMaterialById = async (id, userId, userRole) => {
   })
     .populate("courseId", "title slug")
     .populate("classId", "batchName")
-    .populate("teacherId", "fullName email");
+    .populate("teacherId", "fullName email avatar");
 
   if (!material) {
     throw new ApiError(404, MATERIAL_MESSAGES.MATERIAL_NOT_FOUND);
   }
 
-  if (userRole === USER_ROLE.ADMIN) {
-    return material;
-  }
-
   if (userRole === USER_ROLE.TEACHER) {
-    if (material.teacherId._id.toString() !== userId.toString()) {
+    if (material.teacherId?._id?.toString() !== userId.toString()) {
       throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
     }
     return material;
@@ -141,7 +127,7 @@ const getMaterialById = async (id, userId, userRole) => {
     });
 
     if (!enrolled) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
+      throw new ApiError(403, "You are not enrolled in this class.");
     }
     return material;
   }
@@ -150,6 +136,10 @@ const getMaterialById = async (id, userId, userRole) => {
 };
 
 const updateMaterial = async (id, payload, userId, userRole) => {
+  if (userRole !== USER_ROLE.TEACHER) {
+    throw new ApiError(403, "Only the assigned teacher can update this material.");
+  }
+
   const material = await Material.findOne({
     _id: id,
     isDeleted: { $ne: true },
@@ -159,10 +149,8 @@ const updateMaterial = async (id, payload, userId, userRole) => {
     throw new ApiError(404, MATERIAL_MESSAGES.MATERIAL_NOT_FOUND);
   }
 
-  if (userRole === USER_ROLE.TEACHER) {
-    if (material.teacherId.toString() !== userId.toString()) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
-    }
+  if (material.teacherId.toString() !== userId.toString()) {
+    throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
   }
 
   const updatedMaterial = await Material.findByIdAndUpdate(
@@ -172,12 +160,16 @@ const updateMaterial = async (id, payload, userId, userRole) => {
   )
     .populate("courseId", "title slug")
     .populate("classId", "batchName")
-    .populate("teacherId", "fullName email");
+    .populate("teacherId", "fullName email avatar");
 
   return updatedMaterial;
 };
 
 const deleteMaterial = async (id, userId, userRole) => {
+  if (userRole !== USER_ROLE.TEACHER) {
+    throw new ApiError(403, "Only the assigned teacher can delete this material.");
+  }
+
   const material = await Material.findOne({
     _id: id,
     isDeleted: { $ne: true },
@@ -187,10 +179,8 @@ const deleteMaterial = async (id, userId, userRole) => {
     throw new ApiError(404, MATERIAL_MESSAGES.MATERIAL_NOT_FOUND);
   }
 
-  if (userRole === USER_ROLE.TEACHER) {
-    if (material.teacherId.toString() !== userId.toString()) {
-      throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
-    }
+  if (material.teacherId.toString() !== userId.toString()) {
+    throw new ApiError(403, MATERIAL_MESSAGES.UNAUTHORIZED_TEACHER);
   }
 
   await Material.findByIdAndUpdate(id, {
@@ -208,3 +198,4 @@ export const MaterialService = {
   updateMaterial,
   deleteMaterial,
 };
+

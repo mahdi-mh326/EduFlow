@@ -5,6 +5,7 @@ import { teacherUtils } from "./teacher.utils.js";
 import { generateTemporaryPassword } from "../../shared/password.utils.js";
 import { checkDuplicateEmail, checkDuplicatePhone } from "../../shared/userValidation.utils.js";
 import { createStaffUser } from "../../shared/userCreation.utils.js";
+import { OTPService } from "../otp/otp.service.js";
 import { EMAIL_SUBJECTS } from "../../constants/email.constant.js";
 import sendEmail from "../../utils/email/sendEmail.js";
 import { emailTemplates } from "../../utils/email/email.template.js";
@@ -14,7 +15,7 @@ import ApiError from "../../shared/ApiError.js";
 
 const createTeacher = async (payload, createdBy) => {
   const {
-    designation, qualification, experienceYears, bio, officePhone,
+    designation, qualification,
     ...userPayload
   } = payload;
 
@@ -50,9 +51,6 @@ const createTeacher = async (payload, createdBy) => {
             employeeId,
             designation,
             qualification,
-            experienceYears,
-            bio,
-            officePhone,
           },
         ],
         { session }
@@ -62,10 +60,12 @@ const createTeacher = async (payload, createdBy) => {
     await session.endSession();
   }
 
+
+
   try {
     await sendEmail({
       to: user.email,
-      subject: EMAIL_SUBJECTS.WELCOME_TEACHER,
+      subject: EMAIL_SUBJECTS.WELCOME_TEACHER || "Welcome to EduFlow - Teacher Account Created",
       html: emailTemplates.teacherWelcome(
         user.fullName,
         teacherProfile.employeeId,
@@ -78,6 +78,7 @@ const createTeacher = async (payload, createdBy) => {
   } finally {
     temporaryPassword = null;
   }
+
 
   return {
     user: {
@@ -209,37 +210,46 @@ const getTeacher = async (id) => {
 const updateTeacher = async (id, payload) => {
   if (!mongoose.isValidObjectId(id)) throw new ApiError(400, "Invalid teacher ID.");
 
-  const user = await User.findOne({ _id: id, role: USER_ROLE.TEACHER, isDeleted: { $ne: true } }).select("_id phone");
+  const user = await User.findOne({ _id: id, role: USER_ROLE.TEACHER, isDeleted: { $ne: true } }).select("_id email phone");
   if (!user) throw new ApiError(404, "Teacher not found.");
 
   const {
-    fullName, phone, gender, avatar,
-    designation, qualification, experienceYears, bio, officePhone,
+    fullName, email, phone, gender, avatar,
+    designation, qualification,
   } = payload;
 
-  const userUpdates    = { fullName, phone, gender, avatar };
-  const profileUpdates = { designation, qualification, experienceYears, bio, officePhone };
+  const userUpdates = { fullName, gender, avatar };
+  const profileUpdates = { designation, qualification };
 
-  // Strip undefined keys
-  Object.keys(userUpdates).forEach((k)    => userUpdates[k]    === undefined && delete userUpdates[k]);
-  Object.keys(profileUpdates).forEach((k) => profileUpdates[k] === undefined && delete profileUpdates[k]);
+  if (email && email.trim().toLowerCase() !== String(user.email).toLowerCase()) {
+    const conflict = await User.findOne({ email: email.trim().toLowerCase(), _id: { $ne: id } }, { _id: 1 }).lean();
+    if (conflict) throw new ApiError(409, "Email already in use.");
+    userUpdates.email = email.trim().toLowerCase();
+  }
 
   if (phone && phone !== String(user.phone)) {
     const conflict = await User.findOne({ phone, _id: { $ne: id } }, { _id: 1 }).lean();
     if (conflict) throw new ApiError(409, "Phone number already in use.");
+    userUpdates.phone = phone;
   }
+
+  // Strip undefined keys
+  Object.keys(userUpdates).forEach((k) => userUpdates[k] === undefined && delete userUpdates[k]);
+  Object.keys(profileUpdates).forEach((k) => profileUpdates[k] === undefined && delete profileUpdates[k]);
 
   await Promise.all([
     Object.keys(userUpdates).length
-      ? User.findByIdAndUpdate(id, userUpdates, { runValidators: true })
+      ? User.findByIdAndUpdate(id, { $set: userUpdates }, { runValidators: true })
       : null,
     Object.keys(profileUpdates).length
-      ? TeacherProfile.findOneAndUpdate({ userId: id }, profileUpdates, { runValidators: true })
+      ? TeacherProfile.findOneAndUpdate({ userId: id }, { $set: profileUpdates }, { runValidators: true })
       : null,
   ]);
 
   return getTeacher(id);
 };
+
+
 
 const updateTeacherStatus = async (id, status) => {
   if (!mongoose.isValidObjectId(id)) throw new ApiError(400, "Invalid teacher ID.");
@@ -258,13 +268,14 @@ const updateTeacherStatus = async (id, status) => {
 const deleteTeacher = async (id) => {
   if (!mongoose.isValidObjectId(id)) throw new ApiError(400, "Invalid teacher ID.");
 
-  const teacher = await User.findOneAndUpdate(
-    { _id: id, role: USER_ROLE.TEACHER, isDeleted: { $ne: true } },
-    { isDeleted: true, deletedAt: new Date(), status: USER_STATUS.BLOCKED },
-    { new: true }
-  ).select("_id");
-
+  const teacher = await User.findOne({ _id: id, role: USER_ROLE.TEACHER });
   if (!teacher) throw new ApiError(404, "Teacher not found.");
+
+  await Promise.all([
+    TeacherProfile.deleteOne({ userId: id }),
+    User.deleteOne({ _id: id }),
+  ]);
 };
+
 
 export const TeacherService = { createTeacher, getTeachers, getTeacher, updateTeacher, updateTeacherStatus, deleteTeacher };

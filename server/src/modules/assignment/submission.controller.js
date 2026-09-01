@@ -48,9 +48,28 @@ const getSubmissions = catchAsync(async (req, res) => {
   });
 });
 
+const gradeSubmission = catchAsync(async (req, res) => {
+  const result = await SubmissionService.gradeSubmission(
+    req.params.id,
+    req.params.submissionId,
+    req.body,
+    req.user._id,
+    req.user.role
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Submission graded successfully",
+    data: result,
+  });
+});
+
 export const SubmissionController = {
   createSubmission,
   getMySubmission,
   updateMySubmission,
   getSubmissions,
+  gradeSubmission,
 };
+

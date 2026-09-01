@@ -32,7 +32,7 @@ router.get(
   PaymentController.getStudentPayments
 );
 
-router.use(authenticate, authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN));
+router.use(authenticate, authorize(USER_ROLE.ADMIN));
 
 router.get("/", PaymentController.getPayments);
 

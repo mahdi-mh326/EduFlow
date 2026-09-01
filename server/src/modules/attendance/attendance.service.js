@@ -380,6 +380,65 @@ const getAttendanceReport = async (query) => {
   };
 };
 
+const submitClassAttendance = async (classId, teacherId, payload) => {
+
+  const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });
+  if (!cls) throw new ApiError(404, "Class not found");
+
+  if (cls.teacherId.toString() !== teacherId.toString()) {
+    throw new ApiError(403, "You are not authorized to take attendance for this class.");
+  }
+
+  const { attendanceDate, students, liveSessionId } = payload;
+  const dateObj = attendanceDate ? new Date(attendanceDate) : new Date();
+
+  const startOfDay = new Date(dateObj);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(dateObj);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  await Attendance.deleteMany({
+    classId,
+    attendanceDate: { $gte: startOfDay, $lte: endOfDay },
+  });
+
+  const docs = (students || []).map((s) => ({
+    courseId: cls.courseId,
+    classId,
+    teacherId,
+    studentId: s.studentId,
+    liveSessionId: liveSessionId || null,
+    status: s.status || ATTENDANCE_STATUS.PRESENT,
+    attendanceDate: dateObj,
+    remarks: s.remarks || "",
+    createdBy: teacherId,
+  }));
+
+  if (docs.length > 0) {
+    await Attendance.insertMany(docs);
+  }
+
+  return { message: "Attendance recorded successfully.", count: docs.length };
+};
+
+const getClassAttendanceHistory = async (classId, teacherId) => {
+  const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });
+  if (!cls) throw new ApiError(404, "Class not found");
+
+  if (cls.teacherId.toString() !== teacherId.toString()) {
+    throw new ApiError(403, "You are not authorized to access this class attendance.");
+  }
+
+  const records = await Attendance.find({
+    classId,
+    isDeleted: { $ne: true },
+  })
+    .populate("studentId", "fullName email avatar phone")
+    .sort({ attendanceDate: -1, createdAt: -1 });
+
+  return records;
+};
+
 export const AttendanceService = {
   startAttendance,
   submitAttendance,
@@ -387,4 +446,7 @@ export const AttendanceService = {
   getStudentAttendance,
   getAttendances,
   getAttendanceReport,
+  submitClassAttendance,
+  getClassAttendanceHistory,
 };
+

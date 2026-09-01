@@ -1,6 +1,7 @@
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { UserService } from "./user.service.js";
+import ApiError from "../../shared/ApiError.js";
 
 const getMe = catchAsync(async (req, res) => {
   const result = await UserService.getMe(req.user._id);
@@ -24,6 +25,27 @@ const updateProfile = catchAsync(async (req, res) => {
   });
 });
 
+const uploadAvatar = catchAsync(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, "Avatar file is required.");
+  }
+
+  const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+  const result = await UserService.updateProfile(req.user._id, { avatar: avatarUrl });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Avatar uploaded successfully",
+    data: {
+      avatar: avatarUrl,
+      user: result,
+    },
+  });
+});
+
+
 const changePassword = catchAsync(async (req, res) => {
   await UserService.changePassword(req.user._id, req.body);
 
@@ -38,5 +60,6 @@ const changePassword = catchAsync(async (req, res) => {
 export const UserController = {
   getMe,
   updateProfile,
+  uploadAvatar,
   changePassword,
 };

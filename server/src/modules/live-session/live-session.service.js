@@ -152,7 +152,7 @@ const getLiveSessions = async (userId, userRole) => {
     }).distinct("classId");
 
     if (enrolledClassIds.length === 0) {
-      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_STUDENT);
+      return [];
     }
 
     filter.classId = { $in: enrolledClassIds };
@@ -297,7 +297,7 @@ const getStudentLiveSessions = async (studentId) => {
   }).distinct("classId");
 
   if (enrolledClassIds.length === 0) {
-    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+    return [];
   }
 
   const sessions = await LiveSession.find({
@@ -373,6 +373,105 @@ const endLiveSession = async (id, userId) => {
   return updatedSession;
 };
 
+const startClassLive = async (classId, teacherId) => {
+  const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });
+  if (!cls) throw new ApiError(404, LIVE_SESSION_MESSAGES.CLASS_NOT_FOUND);
+
+  if (cls.teacherId.toString() !== teacherId.toString()) {
+    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  }
+
+  let session = await LiveSession.findOne({
+    classId,
+    teacherId,
+    status: LIVE_SESSION_STATUS.LIVE,
+    isDeleted: { $ne: true },
+  })
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName startDate endDate")
+    .populate("teacherId", "fullName email");
+
+  if (session) {
+    return session;
+  }
+
+  const today = new Date();
+  const startTime = cls.startTime || "10:00";
+  const endTime = cls.endTime || "11:30";
+  const meetingRoom = generateMeetingRoom(cls.batchName, today);
+  const meetingUrl = `https://meet.jit.si/${meetingRoom}`;
+
+  session = await LiveSession.create({
+    courseId: cls.courseId,
+    classId,
+    teacherId,
+    title: `${cls.batchName} - Live Class`,
+    description: `Live class session for ${cls.batchName}`,
+    meetingRoom,
+    meetingUrl,
+    scheduledDate: today,
+    startTime,
+    endTime,
+    status: LIVE_SESSION_STATUS.LIVE,
+    createdBy: teacherId,
+  });
+
+  const populated = await LiveSession.findById(session._id)
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName startDate endDate")
+    .populate("teacherId", "fullName email");
+
+  return populated;
+};
+
+const endClassLive = async (classId, teacherId) => {
+  const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });
+  if (!cls) throw new ApiError(404, LIVE_SESSION_MESSAGES.CLASS_NOT_FOUND);
+
+  if (cls.teacherId.toString() !== teacherId.toString()) {
+    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  }
+
+  await LiveSession.updateMany(
+    { classId, teacherId, status: LIVE_SESSION_STATUS.LIVE, isDeleted: { $ne: true } },
+    { $set: { status: LIVE_SESSION_STATUS.COMPLETED } }
+  );
+
+  return { message: "Live class ended successfully." };
+};
+
+const getActiveClassLive = async (classId, userId, userRole) => {
+  const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });
+  if (!cls) throw new ApiError(404, LIVE_SESSION_MESSAGES.CLASS_NOT_FOUND);
+
+  if (userRole === USER_ROLE.TEACHER) {
+    if (cls.teacherId.toString() !== userId.toString()) {
+      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
+  } else if (userRole === USER_ROLE.STUDENT) {
+    const isEnrolled = await Enrollment.findOne({
+      studentId: userId,
+      classId,
+      status: ENROLLMENT_STATUS.ACTIVE,
+      isDeleted: { $ne: true },
+    });
+    if (!isEnrolled) {
+      throw new ApiError(403, "You are not enrolled in this class.");
+    }
+  }
+
+  const session = await LiveSession.findOne({
+    classId,
+    status: LIVE_SESSION_STATUS.LIVE,
+    isDeleted: { $ne: true },
+  })
+    .populate("courseId", "title slug")
+    .populate("classId", "batchName startDate endDate")
+    .populate("teacherId", "fullName email");
+
+  return session;
+};
+
 export const LiveSessionService = {
   createLiveSession,
   getLiveSessions,
@@ -382,4 +481,8 @@ export const LiveSessionService = {
   getStudentLiveSessions,
   startLiveSession,
   endLiveSession,
+  startClassLive,
+  endClassLive,
+  getActiveClassLive,
 };
+

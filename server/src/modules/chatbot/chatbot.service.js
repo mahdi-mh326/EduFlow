@@ -560,7 +560,7 @@ const retrieveSuperAdminContext = async (userId) => {
   ]);
 
   return {
-    role: "super_admin",
+    role: "admin",
     users: users.map((u) => ({
       fullName: u.fullName,
       email: u.email,
@@ -704,6 +704,58 @@ const formatContextForAI = (context) => {
   return lines.join("\n");
 };
 
+const retrieveGuestContext = async () => {
+
+  const [courses, classes] = await Promise.all([
+    Course.find({ status: "published", isDeleted: { $ne: true } })
+      .sort({ isFeatured: -1, createdAt: -1 })
+      .limit(20)
+      .select("title slug shortDescription price discountPrice category difficulty tags isFeatured"),
+    Class.find({ status: "active", isDeleted: { $ne: true } })
+      .sort({ startDate: 1 })
+      .limit(20)
+      .populate("courseId", "title")
+      .populate("teacherId", "fullName")
+      .select("batchName startDate endDate classDays classTime courseId teacherId"),
+  ]);
+
+  return {
+    role: "guest",
+    courses: courses.map((c) => ({
+      title: c.title,
+      slug: c.slug,
+      category: c.category,
+      difficulty: c.difficulty,
+      price: c.discountPrice ? `${c.discountPrice} BDT (Discounted from ${c.price} BDT)` : `${c.price} BDT`,
+      description: c.shortDescription,
+    })),
+    classes: classes.map((cls) => ({
+      batchName: cls.batchName,
+      course: cls.courseId?.title || "Course",
+      instructor: cls.teacherId?.fullName || "Assigned Instructor",
+      startDate: formatDate(cls.startDate),
+      schedule: `${cls.classDays?.join(", ") || "TBD"} at ${cls.classTime || "TBD"}`,
+    })),
+    platformInfo: {
+      name: "EduFlow LMS",
+      features: [
+        "Live interactive online classroom with screen share, chat & whiteboard",
+        "Online assignments and automated quizzes with instant results",
+        "Lecture notes and PDF study materials downloads",
+        "Secure course payments via SSLCommerz (bKash, Nagad, Cards, Rocket)",
+        "Course completion certificates",
+        "Direct teacher mentorship and in-app notifications",
+      ],
+      admissionProcess: [
+        "1. Create an account / Register with your email and name.",
+        "2. Browse available courses and click 'Enroll Now'.",
+        "3. Complete payment securely via SSLCommerz gateway.",
+        "4. Gain instant access to the Student Portal & Class Hub.",
+      ],
+    },
+  };
+};
+
 const retrieveAuthorizedContext = async (userId, userRole, queryDomain) => {
   try {
     let context;
@@ -714,10 +766,8 @@ const retrieveAuthorizedContext = async (userId, userRole, queryDomain) => {
       context = await retrieveTeacherContext(userId);
     } else if (userRole === USER_ROLE.ADMIN) {
       context = await retrieveAdminContext(userId);
-    } else if (userRole === USER_ROLE.SUPER_ADMIN) {
-      context = await retrieveSuperAdminContext(userId);
     } else {
-      return null;
+      context = await retrieveGuestContext();
     }
 
     return context;
@@ -727,7 +777,14 @@ const retrieveAuthorizedContext = async (userId, userRole, queryDomain) => {
 };
 
 const getSourcesFromContext = (context) => {
+  if (!context) return [];
   const sources = [];
+
+  if (context.courses) {
+    context.courses.forEach((c) => {
+      sources.push({ type: "course", title: c.title });
+    });
+  }
 
   if (context.assignments) {
     context.assignments.forEach((a) => {
@@ -783,28 +840,24 @@ const getSourcesFromContext = (context) => {
     });
   }
 
-  return sources.slice(0, 20);
+  return sources.slice(0, 10);
 };
 
-const SYSTEM_PROMPT = `You are EduFlow LMS Assistant, a helpful academic assistant for the EduFlow Learning Management System.
+const SYSTEM_PROMPT = `You are EduFlow LMS Assistant, an intelligent and friendly academic assistant powered by Gemini for the EduFlow Learning Management System.
 
-Your responsibilities:
-- Help users with information about their courses, classes, assignments, quizzes, live sessions, notices, materials, attendance, and notifications
-- Answer questions using ONLY the EduFlow context provided to you
-- If information is not available in the context, say "I couldn't find that information in your EduFlow account."
-- Never invent or hallucinate academic data
-- Be concise and helpful
-- Respect the user's role (student, teacher, admin, super_admin)
-- Do not expose sensitive information like passwords, tokens, or payment gateway secrets
-- If a student asks about another student's private data, politely decline and explain you can only access their own data
-- If a teacher asks about another teacher's classes, politely decline and explain you can only access their own classes
-- Provide direct, useful answers based on the context provided
-
-Remember: You are an EduFlow-aware assistant. Your answers should be relevant to academic learning, course management, and LMS operations.`;
+Your core guidelines:
+- Language & Tone: Detect and respond naturally in the user's language (Bengali, Banglish, or English). Keep your tone encouraging, professional, and clear.
+- Context Grounding: Answer questions using the EduFlow database context provided to you.
+- For Logged-in Students/Teachers/Admins: Provide precise details about their enrolled courses, assignments, quizzes, live class schedules, study materials, attendance, and notices.
+- For Guests / Prospective Students: Act as a friendly 24/7 Admissions Counselor. Guide them through available courses, course pricing, upcoming batches, platform features, and how to enroll/pay via SSLCommerz.
+- Accuracy: Never invent, hallucinate, or assume academic dates or grades. If something is not in the context, politely say that the information was not found in their account.
+- Security & Privacy: Never disclose passwords, secret keys, or another student's private records.
+- Format: Use bullet points, bold highlights, and clean markdown for readability.`;
 
 export const ChatbotService = {
   detectQueryDomain,
   retrieveAuthorizedContext,
+  retrieveGuestContext,
   formatContextForAI,
   getSourcesFromContext,
   SYSTEM_PROMPT,
@@ -812,3 +865,4 @@ export const ChatbotService = {
 };
 
 export default ChatbotService;
+

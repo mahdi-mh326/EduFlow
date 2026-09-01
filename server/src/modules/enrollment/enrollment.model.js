@@ -20,9 +20,9 @@ const enrollmentSchema = new mongoose.Schema(
     },
     sectionId: {
       type: String,
-      required: [true, "Section is required"],
-      enum: ["A", "B", "C"],
+      default: "",
     },
+
     paymentStatus: {
       type: String,
       enum: Object.values(PAYMENT_STATUS),

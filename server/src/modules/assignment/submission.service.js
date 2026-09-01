@@ -198,9 +198,55 @@ const getSubmissions = async (assignmentId, userId, userRole) => {
   return submissions;
 };
 
+const gradeSubmission = async (assignmentId, submissionId, payload, userId, userRole) => {
+  const assignment = await validateAssignment(assignmentId);
+
+  if (userRole === USER_ROLE.TEACHER) {
+    if (assignment.teacherId.toString() !== userId.toString()) {
+      throw new ApiError(403, ASSIGNMENT_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
+  }
+
+  const submission = await AssignmentSubmission.findOne({
+    _id: submissionId,
+    assignmentId,
+    isDeleted: { $ne: true },
+  });
+
+  if (!submission) {
+    throw new ApiError(404, SUBMISSION_MESSAGES.SUBMISSION_NOT_FOUND);
+  }
+
+  if (payload.marks > assignment.totalMarks) {
+    throw new ApiError(400, `Marks cannot exceed assignment total marks (${assignment.totalMarks})`);
+  }
+
+  const updated = await AssignmentSubmission.findByIdAndUpdate(
+    submission._id,
+    {
+      $set: {
+        marks: payload.marks,
+        feedback: payload.feedback !== undefined ? payload.feedback : submission.feedback,
+        status: SUBMISSION_STATUS.GRADED,
+        gradedAt: new Date(),
+        gradedBy: userId,
+      },
+    },
+    { new: true, runValidators: true }
+  )
+    .populate("assignmentId", "title dueDate totalMarks status")
+    .populate("studentId", "fullName email")
+    .populate("gradedBy", "fullName email")
+    .select("-isDeleted -deletedAt");
+
+  return updated;
+};
+
 export const SubmissionService = {
   createSubmission,
   getMySubmission,
   updateMySubmission,
   getSubmissions,
+  gradeSubmission,
 };
+

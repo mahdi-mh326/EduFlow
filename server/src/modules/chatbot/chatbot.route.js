@@ -20,6 +20,11 @@ const chatbotRateLimiter = rateLimit({
 
 const router = express.Router();
 
+// Authenticated user chat (Role-based Context: Student, Teacher, Admin)
 router.post("/chat", authenticate, chatbotRateLimiter, validateRequest(ChatbotValidation.chatValidationSchema), ChatbotController.sendChat);
 
+// Public / Guest chat (Admissions, Course Explorer, Platform FAQs)
+router.post("/guest-chat", chatbotRateLimiter, validateRequest(ChatbotValidation.chatValidationSchema), ChatbotController.sendChat);
+
 export default router;
+

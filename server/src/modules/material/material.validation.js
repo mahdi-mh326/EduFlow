@@ -5,7 +5,7 @@ const createMaterialSchema = z.object({
   body: z.object({
     courseId: z.string().min(1, "Course is required"),
     classId: z.string().min(1, "Class is required"),
-    teacherId: z.string().min(1, "Teacher is required"),
+    teacherId: z.string().min(1, "Teacher is required").optional(),
     title: z
       .string()
       .min(1, "Title is required")

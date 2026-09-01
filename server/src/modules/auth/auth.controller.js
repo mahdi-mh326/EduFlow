@@ -18,6 +18,15 @@ const verifyEmail = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
   const result = await AuthService.verifyEmail(email, otp);
 
+  if (result.refreshToken) {
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
   sendResponse(res, {
     statusCode: AUTH_STATUS_CODES.SUCCESS,
     success: true,
@@ -51,15 +60,30 @@ const sendVerificationOTP = catchAsync(async (req, res) => {
 });
 
 const login = catchAsync(async (req, res) => {
-  const { email, password } = req.body;
-  const result = await AuthService.login(email, password);
+  const { email, password, role } = req.body;
+  const result = await AuthService.login(email, password, role);
 
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+
+  if (result.requireEmailVerification) {
+    return sendResponse(res, {
+      statusCode: AUTH_STATUS_CODES.SUCCESS,
+      success: true,
+      message: "Email verification required. An OTP has been sent to your email.",
+      data: {
+        user: result.user,
+        requireEmailVerification: true,
+      },
+    });
+  }
+
+  if (result.refreshToken) {
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
 
   const responseData = {
     user: result.user,
@@ -77,6 +101,7 @@ const login = catchAsync(async (req, res) => {
     data: responseData,
   });
 });
+
 
 const setPassword = catchAsync(async (req, res) => {
   const result = await AuthService.setPassword(req.user._id, req.body);
@@ -122,6 +147,29 @@ const logout = catchAsync(async (req, res) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await AuthService.forgotPassword(email);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.FORGOT_PASSWORD_OTP_SENT,
+    data: result,
+  });
+});
+
+const resetPassword = catchAsync(async (req, res) => {
+  const result = await AuthService.resetPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: AUTH_STATUS_CODES.SUCCESS,
+    success: true,
+    message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS,
+    data: result,
+  });
+});
+
 export const AuthController = {
   register,
   verifyEmail,
@@ -129,6 +177,9 @@ export const AuthController = {
   sendVerificationOTP,
   login,
   setPassword,
+  forgotPassword,
+  resetPassword,
   refreshToken,
   logout,
 };
+

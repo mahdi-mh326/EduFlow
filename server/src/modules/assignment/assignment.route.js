@@ -15,7 +15,7 @@ router.get("/", authenticate, AssignmentController.getAssignments);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(AssignmentValidation.createAssignmentSchema),
   AssignmentController.createAssignment
 );
@@ -25,7 +25,7 @@ router.get("/:id", authenticate, AssignmentController.getAssignmentById);
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(AssignmentValidation.updateAssignmentSchema),
   AssignmentController.updateAssignment
 );
@@ -33,7 +33,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   AssignmentController.deleteAssignment
 );
 
@@ -63,8 +63,17 @@ router.patch(
 router.get(
   "/:id/submissions",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   SubmissionController.getSubmissions
 );
 
+router.patch(
+  "/:id/submissions/:submissionId/grade",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  validateRequest(SubmissionValidation.gradeSubmissionSchema),
+  SubmissionController.gradeSubmission
+);
+
 export default router;
+

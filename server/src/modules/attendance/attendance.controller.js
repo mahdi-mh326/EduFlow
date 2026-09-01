@@ -80,6 +80,35 @@ const getStudentAttendance = catchAsync(async (req, res) => {
   });
 });
 
+const submitClassAttendance = catchAsync(async (req, res) => {
+  const result = await AttendanceService.submitClassAttendance(
+    req.params.classId,
+    req.user._id,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+const getClassAttendanceHistory = catchAsync(async (req, res) => {
+  const result = await AttendanceService.getClassAttendanceHistory(
+    req.params.classId,
+    req.user._id
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Class attendance records fetched successfully.",
+    data: result,
+  });
+});
+
 export const AttendanceController = {
   startAttendance,
   submitAttendance,
@@ -87,4 +116,7 @@ export const AttendanceController = {
   getAttendances,
   getAttendanceReport,
   getStudentAttendance,
+  submitClassAttendance,
+  getClassAttendanceHistory,
 };
+

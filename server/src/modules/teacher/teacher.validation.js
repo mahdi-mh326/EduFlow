@@ -24,7 +24,7 @@ const createTeacherSchema = z.object({
       error: (i) => i.input === undefined ? "Gender is required." : "Gender must be male, female, or other.",
     }),
 
-    avatar: z.string().url("Avatar must be a valid URL.").optional(),
+    avatar: z.string().optional().or(z.literal("")),
 
     // Profile fields
     designation: z
@@ -36,18 +36,6 @@ const createTeacherSchema = z.object({
       .string({ error: (i) => i.input === undefined ? "Qualification is required." : "Qualification must be a string." })
       .min(2, "Qualification must be at least 2 characters.")
       .trim(),
-
-    experienceYears: z
-      .number({ error: (i) => i.input === undefined ? "Experience years is required." : "Experience must be a non-negative integer." })
-      .int("Experience must be a non-negative integer.")
-      .min(0, "Experience must be a non-negative integer."),
-
-    bio: z.string().optional(),
-
-    officePhone: z
-      .string()
-      .regex(E164, "Invalid office phone. Use E.164 format (e.g. +8801XXXXXXXXX).")
-      .optional(),
   }),
 });
 
@@ -62,6 +50,13 @@ const updateTeacherSchema = z.object({
         .trim()
         .optional(),
 
+      email: z
+        .string()
+        .email("Invalid email format.")
+        .trim()
+        .toLowerCase()
+        .optional(),
+
       phone: z
         .string()
         .regex(E164, "Invalid phone number. Use E.164 format (e.g. +8801XXXXXXXXX).")
@@ -69,7 +64,7 @@ const updateTeacherSchema = z.object({
 
       gender: z.enum(["male", "female", "other"]).optional(),
 
-      avatar: z.string().url("Avatar must be a valid URL.").optional(),
+      avatar: z.string().optional().or(z.literal("")),
 
       // Profile fields
       designation: z
@@ -83,25 +78,13 @@ const updateTeacherSchema = z.object({
         .min(2, "Qualification must be at least 2 characters.")
         .trim()
         .optional(),
-
-      experienceYears: z
-        .number({ error: () => "Experience must be a non-negative integer." })
-        .int("Experience must be a non-negative integer.")
-        .min(0, "Experience must be a non-negative integer.")
-        .optional(),
-
-      bio: z.string().optional(),
-
-      officePhone: z
-        .string()
-        .regex(E164, "Invalid office phone. Use E.164 format (e.g. +8801XXXXXXXXX).")
-        .optional(),
     })
-    .strict()
+    .passthrough()
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update.",
     }),
 });
+
 
 const updateTeacherStatusSchema = z.object({
   body: z.object({

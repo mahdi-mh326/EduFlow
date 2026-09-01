@@ -11,14 +11,14 @@ const router = express.Router();
 router.get(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   TeacherController.getTeachers
 );
 
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   validateRequest(TeacherValidation.createTeacherSchema),
   TeacherController.createTeacher
 );
@@ -26,14 +26,14 @@ router.post(
 router.get(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   TeacherController.getTeacher
 );
 
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   validateRequest(TeacherValidation.updateTeacherSchema),
   TeacherController.updateTeacher
 );
@@ -41,7 +41,7 @@ router.patch(
 router.patch(
   "/:id/status",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   validateRequest(TeacherValidation.updateTeacherStatusSchema),
   TeacherController.updateTeacherStatus
 );
@@ -49,7 +49,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   TeacherController.deleteTeacher
 );
 

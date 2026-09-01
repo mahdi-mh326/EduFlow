@@ -16,9 +16,10 @@ const createMaterial = catchAsync(async (req, res) => {
 });
 
 const getMaterials = catchAsync(async (req, res) => {
-  const result = await MaterialService.getMaterials(req.user._id, req.user.role);
+  const result = await MaterialService.getMaterials(req.user._id, req.user.role, req.query);
 
   sendResponse(res, {
+
     statusCode: 200,
     success: true,
     message: MATERIAL_MESSAGES.MATERIALS_FETCHED,

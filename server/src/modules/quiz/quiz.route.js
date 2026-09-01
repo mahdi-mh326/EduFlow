@@ -16,7 +16,7 @@ router.get("/", authenticate, QuizController.getQuizzes);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   QuizController.createQuiz
 );
 
@@ -25,14 +25,14 @@ router.get("/:id", authenticate, QuizController.getQuizById);
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   QuizController.updateQuiz
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   QuizController.deleteQuiz
 );
 
@@ -41,7 +41,7 @@ router.get("/:quizId/questions", authenticate, QuestionController.getQuestions);
 router.post(
   "/:quizId/questions",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(QuestionValidation.createQuestionSchema),
   QuestionController.createQuestion
 );
@@ -51,7 +51,7 @@ router.get("/:quizId/questions/:questionId", authenticate, QuestionController.ge
 router.patch(
   "/:quizId/questions/:questionId",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(QuestionValidation.updateQuestionSchema),
   QuestionController.updateQuestion
 );
@@ -59,7 +59,7 @@ router.patch(
 router.delete(
   "/:quizId/questions/:questionId",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   QuestionController.deleteQuestion
 );
 
@@ -96,7 +96,7 @@ router.post(
 router.get(
   "/:quizId/attempts",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   AttemptController.getAttempts
 );
 

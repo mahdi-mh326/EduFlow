@@ -14,3 +14,10 @@ export const NOTICE_PRIORITY = {
   MEDIUM: "medium",
   HIGH: "high",
 };
+
+export const NOTICE_TARGET_AUDIENCE = {
+  ALL: "all",
+  STUDENTS: "students",
+  TEACHERS: "teachers",
+};
+

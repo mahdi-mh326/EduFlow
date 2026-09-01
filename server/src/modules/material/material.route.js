@@ -14,22 +14,23 @@ router.get("/:id", authenticate, MaterialController.getMaterialById);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.TEACHER),
   MaterialController.createMaterial
 );
 
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.TEACHER),
   MaterialController.updateMaterial
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.TEACHER),
   MaterialController.deleteMaterial
 );
+
 
 export default router;

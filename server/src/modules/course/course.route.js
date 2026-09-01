@@ -4,6 +4,7 @@ import authorize from "../../middlewares/authorize.js";
 import optionalAuthenticate from "../../middlewares/optionalAuthenticate.js";
 import validateRequest from "../../middlewares/validateRequest.js";
 import { USER_ROLE } from "../user/user.constant.js";
+import { uploadCoursePoster } from "../../middlewares/upload.course.js";
 import { CourseValidation } from "./course.validation.js";
 import { CourseController } from "./course.controller.js";
 
@@ -12,12 +13,29 @@ const router = express.Router();
 router.get("/", optionalAuthenticate, CourseController.getAllCourses);
 router.get("/:slug", optionalAuthenticate, CourseController.getCourseBySlug);
 
-router.use(authenticate, authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN));
+router.use(authenticate, authorize(USER_ROLE.ADMIN));
+
+router.post(
+  "/upload-poster",
+  uploadCoursePoster.single("poster"),
+  CourseController.uploadPoster
+);
 
 router.post(
   "/",
   validateRequest(CourseValidation.createCourseSchema),
   CourseController.createCourse
+);
+
+router.post(
+  "/:id/poster",
+  uploadCoursePoster.single("poster"),
+  CourseController.uploadPoster
+);
+
+router.delete(
+  "/:id/poster",
+  CourseController.deletePoster
 );
 
 router.patch(
@@ -31,3 +49,4 @@ router.patch("/:id/feature", CourseController.featureCourse);
 router.delete("/:id", CourseController.softDeleteCourse);
 
 export default router;
+

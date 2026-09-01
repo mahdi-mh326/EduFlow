@@ -38,15 +38,23 @@ const updateProfileValidationSchema = z.object({
     .object({
       fullName: z.string().min(3, "Full name must be at least 3 characters.").max(100).optional(),
       phone: e164Phone.optional(),
-      gender: z.enum(["male", "female", "other"]).optional(),
-      avatar: z.string().url("Invalid avatar URL.").optional(),
-      dateOfBirth: isoDate.optional(),
+      gender: z.enum(["male", "female", "other"]).optional().nullable(),
+      avatar: z.string().optional().nullable(),
+      dateOfBirth: z
+        .string()
+        .optional()
+        .nullable()
+        .refine(
+          (val) => !val || !isNaN(Date.parse(val)),
+          "Invalid date format."
+        ),
     })
     .refine(
       (data) => Object.values(data).some((v) => v !== undefined),
       { message: "At least one field must be provided for update." }
     ),
 });
+
 
 const changePasswordValidationSchema = z.object({
   body: z

@@ -15,7 +15,7 @@ const createClass = catchAsync(async (req, res) => {
 });
 
 const getClasses = catchAsync(async (req, res) => {
-  const result = await ClassService.getClasses(req.query);
+  const result = await ClassService.getClasses(req.query, req.user);
 
   sendResponse(res, {
     statusCode: 200,
@@ -27,7 +27,7 @@ const getClasses = catchAsync(async (req, res) => {
 });
 
 const getClassById = catchAsync(async (req, res) => {
-  const result = await ClassService.getClassById(req.params.id);
+  const result = await ClassService.getClassById(req.params.id, req.user);
 
   sendResponse(res, {
     statusCode: 200,
@@ -36,6 +36,7 @@ const getClassById = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
 
 const updateClass = catchAsync(async (req, res) => {
   const result = await ClassService.updateClass(req.params.id, req.body);

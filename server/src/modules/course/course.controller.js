@@ -85,6 +85,28 @@ const softDeleteCourse = catchAsync(async (req, res) => {
   });
 });
 
+const uploadPoster = catchAsync(async (req, res) => {
+  const result = await CourseService.uploadPoster(req.params.id, req.file);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Poster uploaded successfully.",
+    data: result,
+  });
+});
+
+const deletePoster = catchAsync(async (req, res) => {
+  const result = await CourseService.deletePoster(req.params.id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 export const CourseController = {
   createCourse,
   getAllCourses,
@@ -93,4 +115,7 @@ export const CourseController = {
   publishCourse,
   featureCourse,
   softDeleteCourse,
+  uploadPoster,
+  deletePoster,
 };
+

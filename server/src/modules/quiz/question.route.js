@@ -15,7 +15,7 @@ router.get("/:questionId", authenticate, QuestionController.getQuestionById);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(QuestionValidation.createQuestionSchema),
   QuestionController.createQuestion
 );
@@ -23,7 +23,7 @@ router.post(
 router.patch(
   "/:questionId",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(QuestionValidation.updateQuestionSchema),
   QuestionController.updateQuestion
 );
@@ -31,7 +31,7 @@ router.patch(
 router.delete(
   "/:questionId",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   QuestionController.deleteQuestion
 );
 

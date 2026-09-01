@@ -14,7 +14,7 @@ import User from "../modules/user/user.model.js";
  * @param {mongoose.Types.ObjectId} options.createdBy
  * @param {mongoose.ClientSession} [options.session]
  */
-export const createStaffUser = async (userPayload, password, { role, status, isVerified, mustChangePassword, createdBy, session } = {}) => {
+export const createStaffUser = async (userPayload, password, { role, status, isVerified, mustChangePassword, isMasterAdmin = false, createdBy, session } = {}) => {
   const doc = {
     ...userPayload,
     password,
@@ -22,8 +22,10 @@ export const createStaffUser = async (userPayload, password, { role, status, isV
     status,
     isVerified,
     mustChangePassword,
+    isMasterAdmin,
     createdBy,
   };
+
 
   if (session) {
     const [user] = await User.create([doc], { session });

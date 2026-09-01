@@ -220,10 +220,26 @@ const getEligibleStudentIds = async (classId) => {
 };
 
 const dispatchNoticeCreated = async (notice, actorId) => {
-  const studentIds = await getEligibleStudentIds(notice.classId);
+  let recipientIds = [];
 
-  const notifications = studentIds.map((studentId) => ({
-    recipientId: studentId,
+  if (notice.classId) {
+    recipientIds = await getEligibleStudentIds(notice.classId);
+  } else {
+    const filter = { isDeleted: { $ne: true }, status: "active" };
+    if (notice.targetAudience === "teachers") {
+      filter.role = USER_ROLE.TEACHER;
+    } else if (notice.targetAudience === "students") {
+      filter.role = USER_ROLE.STUDENT;
+    } else {
+      filter.role = { $in: [USER_ROLE.STUDENT, USER_ROLE.TEACHER] };
+    }
+    recipientIds = await User.find(filter).distinct("_id");
+  }
+
+  recipientIds = recipientIds.filter((id) => id && id.toString() !== actorId.toString());
+
+  const notifications = recipientIds.map((recipientId) => ({
+    recipientId,
     type: NOTIFICATION_TYPE.NOTICE_CREATED,
     title: NOTIFICATION_MESSAGES.NOTICE_CREATED,
     message: `A new notice has been published: ${notice.title}`,
@@ -233,9 +249,9 @@ const dispatchNoticeCreated = async (notice, actorId) => {
   }));
 
   const created = await bulkCreateNotifications(notifications);
-
   created.forEach((n) => sendEmailForNotification(n));
 };
+
 
 const dispatchEnrollmentCreated = async (enrollment, actorId) => {
   const student = await User.findById(enrollment.studentId).select("fullName email");

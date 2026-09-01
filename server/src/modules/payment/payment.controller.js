@@ -29,12 +29,13 @@ const paymentSuccess = catchAsync(async (req, res) => {
     }
   }
 
-  sendResponse(res, {
-    statusCode: result.success ? 200 : 400,
-    success: result.success,
-    message: result.success ? "Payment verified and completed" : "Payment verification failed",
-    data: result,
-  });
+  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const tranId = result.transactionId || params.tran_id || "";
+  const paymentId = result.paymentId || params.val_id || "";
+
+  return res.redirect(
+    `${clientUrl}/payment/result?status=${result.success ? "success" : "failed"}&tran_id=${encodeURIComponent(tranId)}&payment_id=${encodeURIComponent(paymentId)}`
+  );
 });
 
 const paymentFail = catchAsync(async (req, res) => {
@@ -48,12 +49,12 @@ const paymentFail = catchAsync(async (req, res) => {
     }
   }
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: false,
-    message: "Payment failed",
-    data: result,
-  });
+  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const tranId = result.transactionId || params.tran_id || "";
+
+  return res.redirect(
+    `${clientUrl}/payment/result?status=failed&tran_id=${encodeURIComponent(tranId)}`
+  );
 });
 
 const paymentCancel = catchAsync(async (req, res) => {
@@ -67,13 +68,14 @@ const paymentCancel = catchAsync(async (req, res) => {
     }
   }
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: false,
-    message: "Payment cancelled",
-    data: result,
-  });
+  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const tranId = result.transactionId || params.tran_id || "";
+
+  return res.redirect(
+    `${clientUrl}/payment/result?status=cancelled&tran_id=${encodeURIComponent(tranId)}`
+  );
 });
+
 
 const paymentIpn = catchAsync(async (req, res) => {
   const params = { ...req.query, ...req.body };

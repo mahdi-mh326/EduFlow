@@ -14,15 +14,23 @@ router.get("/:id", authenticate, EnrollmentController.getEnrollmentById);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.STUDENT, USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.STUDENT, USER_ROLE.ADMIN),
   EnrollmentController.createEnrollment
+);
+
+router.patch(
+  "/:id/assign-class",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  EnrollmentController.assignClass
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN),
+  authorize(USER_ROLE.ADMIN),
   EnrollmentController.deleteEnrollment
 );
+
 
 export default router;

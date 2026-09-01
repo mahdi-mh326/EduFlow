@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -17,7 +19,11 @@ const app = express();
    Global Middlewares
 =========================== */
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 app.use(
   cors({
@@ -46,6 +52,13 @@ app.use((err, req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
+
+const uploadsPath = path.join(process.cwd(), "public", "uploads");
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsPath));
+
 
 /* ===========================
    Health Check

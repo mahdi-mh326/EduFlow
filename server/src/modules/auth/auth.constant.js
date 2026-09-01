@@ -18,7 +18,10 @@ export const AUTH_MESSAGES = {
   INVALID_TOKEN: "Invalid or expired token",
   REFRESH_TOKEN_NOT_FOUND: "Refresh token not found",
   OTP_SENT: "Verification OTP sent successfully",
+  FORGOT_PASSWORD_OTP_SENT: "Password reset code sent to your email",
+  RESET_PASSWORD_SUCCESS: "Password has been reset successfully. Please log in with your new password.",
 };
+
 
 export const AUTH_STATUS_CODES = {
   SUCCESS: 200,

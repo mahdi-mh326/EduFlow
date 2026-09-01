@@ -92,7 +92,8 @@ const initiatePayment = async (payload, createdBy) => {
 
   const student = await validateStudent(createdBy);
   const course = await validateCourse(courseId);
-  const cls = await validateClass(classId);
+  const cls = classId ? await validateClass(classId) : null;
+
 
   await checkExistingEnrollment(createdBy, courseId);
   await checkExistingPaidPayment(createdBy, courseId);
@@ -204,13 +205,20 @@ const ensureEnrollmentForPayment = async (payment) => {
 
   try {
     const enrollment = await EnrollmentService.createEnrollment(
-      { courseId: payment.courseId, studentId: payment.studentId },
-      payment.studentId
+      {
+        courseId: payment.courseId,
+        classId: payment.classId,
+        studentId: payment.studentId,
+        paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
+      },
+      payment.studentId,
+      USER_ROLE.ADMIN
     );
     enrollment.paymentStatus = ENROLLMENT_PAYMENT_STATUS.PAID;
     await enrollment.save();
     return enrollment;
   } catch (error) {
+
     if (error instanceof ApiError && error.statusCode === 409) {
       const retry = await Enrollment.findOne({
         studentId: payment.studentId,

@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    isMasterAdmin: {
+      type: Boolean,
+      default: false,
+    },
+
+
     mustChangePassword: {
       type: Boolean,
       default: false,

@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/start",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(AttendanceValidation.startAttendanceSchema),
   AttendanceController.startAttendance
 );
@@ -19,7 +19,7 @@ router.post(
 router.post(
   "/submit",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(AttendanceValidation.submitAttendanceSchema),
   AttendanceController.submitAttendance
 );
@@ -27,12 +27,27 @@ router.post(
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   validateRequest(AttendanceValidation.updateAttendanceSchema),
   AttendanceController.updateAttendance
 );
 
-router.use(authenticate, authorize(USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN));
+router.post(
+  "/class/:classId/submit",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  AttendanceController.submitClassAttendance
+);
+
+router.get(
+  "/class/:classId/records",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  AttendanceController.getClassAttendanceHistory
+);
+
+
+router.use(authenticate, authorize(USER_ROLE.ADMIN));
 
 router.get("/", AttendanceController.getAttendances);
 

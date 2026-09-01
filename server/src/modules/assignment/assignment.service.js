@@ -129,7 +129,7 @@ const getAssignments = async (userId, userRole, query = {}) => {
 
     filter.classId = { $in: enrolledClassIds };
     filter.status = ASSIGNMENT_STATUS.PUBLISHED;
-  } else if (userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.SUPER_ADMIN) {
+  } else if (userRole === USER_ROLE.ADMIN) {
     // Admin sees all
   }
 

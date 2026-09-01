@@ -52,25 +52,59 @@ const verifyEmail = async (email, otp) => {
       status: USER_STATUS.ACTIVE,
     },
     { new: true }
-  );
+  ).select("+mustChangePassword");
 
   if (!user) {
     throw new ApiError(404, AUTH_MESSAGES.USER_NOT_FOUND);
   }
 
-  await sendEmail({
-    to: user.email,
-    subject: "Welcome to EduFlow",
-    html: emailTemplates.welcomeEmail(user.fullName),
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Welcome to EduFlow",
+      html: emailTemplates.welcomeEmail(user.fullName),
+    });
+  } catch (err) {
+    // ignore
+  }
+
+  const accessToken = tokenUtils.generateAccessToken({
+    id: user._id,
+    email: user.email,
+    role: user.role,
+  });
+
+  const refreshToken = tokenUtils.generateRefreshToken({
+    id: user._id,
+    email: user.email,
+    role: user.role,
   });
 
   return {
     id: user._id,
     email: user.email,
     fullName: user.fullName,
+    role: user.role,
+    isVerified: user.isVerified,
+    isMasterAdmin: user.isMasterAdmin || false,
+    mustChangePassword: user.mustChangePassword,
+    accessToken,
+    refreshToken,
+    user: {
+      id: user._id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      isVerified: user.isVerified,
+      isMasterAdmin: user.isMasterAdmin || false,
+      mustChangePassword: user.mustChangePassword,
+      avatar: user.avatar,
+    },
     message: AUTH_MESSAGES.EMAIL_VERIFICATION_SUCCESS,
   };
 };
+
+
 
 const resendOTP = async (email) => {
   const user = await User.findOne({ email });
@@ -122,8 +156,9 @@ const sendVerificationOTP = async (email) => {
   };
 };
 
-const login = async (email, password) => {
-  const user = await User.findOne({ email }).select("+password +mustChangePassword");
+const login = async (email, password, expectedRole) => {
+  const normalizedEmail = (email || "").toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail }).select("+password +mustChangePassword");
 
   if (!user) {
     throw new ApiError(401, AUTH_MESSAGES.INVALID_CREDENTIALS);
@@ -135,8 +170,44 @@ const login = async (email, password) => {
     throw new ApiError(401, AUTH_MESSAGES.INVALID_CREDENTIALS);
   }
 
-  if (user.role === USER_ROLE.TEACHER && !user.isVerified) {
-    throw new ApiError(403, "Please verify your email first.");
+  if (expectedRole) {
+    const normalizedExpectedRole = expectedRole.toLowerCase().trim();
+    if (user.role !== normalizedExpectedRole) {
+      const actualRoleDisplayName =
+        user.role === USER_ROLE.STUDENT
+          ? "Student"
+          : user.role === USER_ROLE.TEACHER
+          ? "Teacher"
+          : "Admin";
+      throw new ApiError(
+        403,
+        `Access denied. This account is registered as a ${actualRoleDisplayName}. Please switch to the ${actualRoleDisplayName} tab to log in.`
+      );
+    }
+  }
+
+
+  if ((user.role === USER_ROLE.TEACHER || user.role === USER_ROLE.ADMIN) && !user.isVerified) {
+    const otp = await OTPService.sendOTP(user.email);
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: `Verify Your Email - ${user.role === USER_ROLE.ADMIN ? 'Admin' : 'Teacher'} Portal`,
+        html: emailTemplates.otpVerification(user.fullName, otp),
+      });
+    } catch (e) {
+      // ignore
+    }
+    return {
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        isMasterAdmin: user.isMasterAdmin || false,
+      },
+      requireEmailVerification: true,
+    };
   }
 
   if (!user.isVerified) {
@@ -167,12 +238,15 @@ const login = async (email, password) => {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      isMasterAdmin: user.isMasterAdmin || false,
+      avatar: user.avatar,
     },
     accessToken,
     refreshToken,
     forcePasswordChange: user.mustChangePassword || false,
   };
 };
+
 
 const setPassword = async (userId, payload) => {
   const { currentPassword, newPassword } = payload;
@@ -196,6 +270,52 @@ const setPassword = async (userId, payload) => {
 
   return {
     message: AUTH_MESSAGES.SET_PASSWORD_SUCCESS,
+  };
+};
+
+const forgotPassword = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, AUTH_MESSAGES.USER_NOT_FOUND);
+  }
+
+  const otp = await OTPService.sendOTP(email);
+
+  await sendEmail({
+    to: email,
+    subject: "Reset Your EduFlow Password",
+    html: emailTemplates.forgotPasswordOtp(user.fullName, otp),
+  });
+
+  return {
+    email,
+    message: AUTH_MESSAGES.FORGOT_PASSWORD_OTP_SENT,
+  };
+};
+
+const resetPassword = async (payload) => {
+  const { email, otp, newPassword } = payload;
+
+  await OTPService.verifyOTP(email, otp);
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, AUTH_MESSAGES.USER_NOT_FOUND);
+  }
+
+  user.password = newPassword;
+  user.mustChangePassword = false;
+  if (!user.isVerified) {
+    user.isVerified = true;
+    user.status = USER_STATUS.ACTIVE;
+  }
+
+  await user.save();
+
+  return {
+    message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS,
   };
 };
 
@@ -230,5 +350,8 @@ export const AuthService = {
   sendVerificationOTP,
   login,
   setPassword,
+  forgotPassword,
+  resetPassword,
   refreshAccessToken,
 };
+

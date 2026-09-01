@@ -24,11 +24,13 @@ const env = {
   superAdminPhone: process.env.SUPER_ADMIN_PHONE,
   superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
 
-  aiProvider: process.env.AI_PROVIDER,
-  aiApiKey: process.env.AI_API_KEY,
-  aiModel: process.env.AI_MODEL,
-  aiBaseURL: process.env.AI_BASE_URL,
-  aiTimeout: process.env.AI_TIMEOUT,
+  aiProvider: process.env.AI_PROVIDER || "gemini",
+  aiApiKey: process.env.GEMINI_API_KEY || process.env.AI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY || process.env.AI_API_KEY,
+  aiModel: process.env.AI_MODEL || "gemini-3.1-flash-lite",
+  aiBaseURL: process.env.AI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
+  aiTimeout: process.env.AI_TIMEOUT || "30000",
 };
+
 
 export default env;

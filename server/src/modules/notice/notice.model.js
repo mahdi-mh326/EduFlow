@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { NOTICE_PRIORITY } from "./notice.constant.js";
+import { NOTICE_PRIORITY, NOTICE_TARGET_AUDIENCE } from "./notice.constant.js";
 
 const noticeSchema = new mongoose.Schema(
   {
@@ -16,7 +16,12 @@ const noticeSchema = new mongoose.Schema(
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Teacher is required"],
+      required: false,
+    },
+    targetAudience: {
+      type: String,
+      enum: Object.values(NOTICE_TARGET_AUDIENCE),
+      default: NOTICE_TARGET_AUDIENCE.ALL,
     },
     title: {
       type: String,
@@ -28,6 +33,15 @@ const noticeSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+    attachmentUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
     },
     priority: {
       type: String,
@@ -41,6 +55,7 @@ const noticeSchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
     },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -31,7 +31,17 @@ const createEnrollment = catchAsync(async (req, res) => {
 });
 
 const getEnrollments = catchAsync(async (req, res) => {
-  const result = await EnrollmentService.getEnrollments(req.user._id, req.user.role);
+  const result = await EnrollmentService.getEnrollments(req.user._id, req.user.role, req.query);
+
+  if (result && result.meta) {
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      message: "Enrollments retrieved successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  }
 
   sendResponse(res, {
     statusCode: 200,
@@ -52,6 +62,22 @@ const getEnrollmentById = catchAsync(async (req, res) => {
   });
 });
 
+const assignClass = catchAsync(async (req, res) => {
+  const { classId } = req.body;
+  if (!classId) {
+    throw new ApiError(400, "Class ID is required");
+  }
+
+  const result = await EnrollmentService.assignClass(req.params.id, classId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Class batch assigned successfully",
+    data: result,
+  });
+});
+
 const deleteEnrollment = catchAsync(async (req, res) => {
   const result = await EnrollmentService.deleteEnrollment(req.params.id);
 
@@ -67,5 +93,7 @@ export const EnrollmentController = {
   createEnrollment,
   getEnrollments,
   getEnrollmentById,
+  assignClass,
   deleteEnrollment,
 };
+

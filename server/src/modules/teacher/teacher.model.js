@@ -31,14 +31,12 @@ const teacherProfileSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Legacy optional fields — kept for backward compatibility
     experienceYears: {
       type: Number,
-      required: true,
       default: 0,
-      min: [0, "Experience years cannot be negative."],
     },
 
-    // Optional profile fields
     bio: {
       type: String,
       default: "",
@@ -46,11 +44,9 @@ const teacherProfileSchema = new mongoose.Schema(
 
     officePhone: {
       type: String,
-      match: [/^\+[1-9]\d{7,14}$/, "Invalid office phone. Use E.164 format."],
       trim: true,
     },
 
-    // Legacy optional fields — kept for backward compatibility, never required
     department: {
       type: String,
       trim: true,
@@ -59,6 +55,7 @@ const teacherProfileSchema = new mongoose.Schema(
     joiningDate: {
       type: Date,
     },
+
 
     specialization: {
       type: String,

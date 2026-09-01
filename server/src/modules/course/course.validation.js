@@ -51,11 +51,13 @@ const createCourseSchema = z.object({
         : `Difficulty must be one of: ${Object.values(COURSE_DIFFICULTY).join(", ")}.`,
     }),
 
-    thumbnail: z.string().url("Thumbnail must be a valid URL.").optional(),
+    thumbnail: z.string().optional().or(z.literal("")),
 
-    banner: z.string().url("Banner must be a valid URL.").optional(),
+    banner: z.string().optional().or(z.literal("")),
 
     featured: z.boolean().optional(),
+    status: z.enum(Object.values(COURSE_STATUS)).optional(),
+    timelineVisible: z.boolean().optional(),
   })
   .refine(
     (data) => data.offerPrice == null || data.offerPrice <= data.price,
@@ -119,9 +121,9 @@ const updateCourseSchema = z.object({
         })
         .optional(),
 
-      thumbnail: z.string().url("Thumbnail must be a valid URL.").optional(),
+      thumbnail: z.string().optional().or(z.literal("")),
 
-      banner: z.string().url("Banner must be a valid URL.").optional(),
+      banner: z.string().optional().or(z.literal("")),
 
       featured: z.boolean().optional(),
 
@@ -133,7 +135,7 @@ const updateCourseSchema = z.object({
 
       timelineVisible: z.boolean().optional(),
     })
-    .strict()
+    .passthrough()
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update.",
     })
@@ -142,5 +144,6 @@ const updateCourseSchema = z.object({
       { message: "Offer price must not exceed the original price.", path: ["offerPrice"] }
     ),
 });
+
 
 export const CourseValidation = { createCourseSchema, updateCourseSchema };

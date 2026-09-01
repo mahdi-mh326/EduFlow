@@ -96,6 +96,41 @@ const endSession = catchAsync(async (req, res) => {
   });
 });
 
+const startClassLive = catchAsync(async (req, res) => {
+
+  const result = await LiveSessionService.startClassLive(req.params.classId, req.user._id);
+  await NotificationService.dispatchLiveSessionStarted(result, req.user._id).catch(() => {});
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Live class started successfully.",
+    data: result,
+  });
+});
+
+const endClassLive = catchAsync(async (req, res) => {
+  const result = await LiveSessionService.endClassLive(req.params.classId, req.user._id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
+const getActiveClassLive = catchAsync(async (req, res) => {
+  const result = await LiveSessionService.getActiveClassLive(req.params.classId, req.user._id, req.user.role);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Active live session retrieved.",
+    data: result,
+  });
+});
+
 export const LiveSessionController = {
   createLiveSession,
   getLiveSessions,
@@ -105,4 +140,8 @@ export const LiveSessionController = {
   getStudentLiveSessions,
   startSession,
   endSession,
+  startClassLive,
+  endClassLive,
+  getActiveClassLive,
 };
+

@@ -1,7 +1,7 @@
 import { aiProvider } from "./ai.provider.js";
 import { CHATBOT_MESSAGES } from "../../modules/chatbot/chatbot.constant.js";
 
-const generateReply = async (systemPrompt, userMessage, context = "") => {
+const generateReply = async (systemPrompt, userMessage, context = "", history = []) => {
   if (!aiProvider.isConfigured()) {
     return {
       reply: CHATBOT_MESSAGES.AI_PROVIDER_UNAVAILABLE,
@@ -10,10 +10,11 @@ const generateReply = async (systemPrompt, userMessage, context = "") => {
   }
 
   try {
-    const result = await aiProvider.chat(systemPrompt, userMessage, context);
+    const result = await aiProvider.chat(systemPrompt, userMessage, context, history);
     return {
       reply: result.reply,
       configured: true,
+      modelUsed: result.modelUsed,
     };
   } catch (error) {
     return {
@@ -23,6 +24,7 @@ const generateReply = async (systemPrompt, userMessage, context = "") => {
     };
   }
 };
+
 
 export const AIService = {
   generateReply,
