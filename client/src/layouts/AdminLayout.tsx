@@ -9,7 +9,8 @@ import { ProfileDropdown } from '@/components/layout'
 
 
 
-type AdminPageTitle = 'Dashboard' | 'Courses' | 'Classes' | 'Teachers' | 'Live Sessions' | 'Attendance' | 'Notices' | 'Enrollments' | 'Payments' | 'Admins' | 'Students' | 'Profile'
+type AdminPageTitle = 'Dashboard' | 'Courses' | 'Classes' | 'Teachers' | 'Live Sessions' | 'Attendance' | 'Notices' | 'Enrollments' | 'Payments' | 'Certificates' | 'Admins' | 'Students' | 'Profile'
+
 
 const routeTitleMap: Record<string, AdminPageTitle> = {
   '/admin/dashboard': 'Dashboard',
@@ -21,14 +22,13 @@ const routeTitleMap: Record<string, AdminPageTitle> = {
   '/admin/notices': 'Notices',
   '/admin/enrollments': 'Enrollments',
   '/admin/payments': 'Payments',
+  '/admin/certificates': 'Certificates',
   '/admin/admins': 'Admins',
   '/admin/students': 'Students',
   '/admin/profile': 'Profile',
 }
 
-
-type IconName = 'dashboard' | 'courses' | 'classes' | 'teachers' | 'live-classes' | 'attendance' | 'materials' | 'notices' | 'enrollments' | 'payments' | 'admins' | 'profile'
-
+type IconName = 'home' | 'dashboard' | 'courses' | 'classes' | 'teachers' | 'live-classes' | 'attendance' | 'materials' | 'notices' | 'enrollments' | 'payments' | 'certificates' | 'admins' | 'profile'
 
 type SidebarLink = {
   to: string
@@ -39,6 +39,12 @@ type SidebarLink = {
 
 function SidebarIcon({ name, className }: { name: IconName; className?: string }) {
   const icons: Record<IconName, ReactNode> = {
+    home: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
     dashboard: (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" />
@@ -47,6 +53,7 @@ function SidebarIcon({ name, className }: { name: IconName; className?: string }
         <rect x="3" y="14" width="7" height="7" />
       </svg>
     ),
+
     courses: (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
@@ -111,6 +118,12 @@ function SidebarIcon({ name, className }: { name: IconName; className?: string }
         <line x1="1" x2="23" y1="10" y2="10" />
       </svg>
     ),
+    certificates: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
     admins: (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -136,8 +149,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, logout } = useAuthStore()
 
   const sidebarLinks: SidebarLink[] = [
+    { to: '/', label: 'Home (Public)', icon: 'home' },
     { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { to: '/admin/courses', label: 'Courses', icon: 'courses' },
+    { to: '/courses', label: 'Course Catalog', icon: 'courses' },
+    { to: '/admin/courses', label: 'Manage Courses', icon: 'courses' },
     { to: '/admin/classes', label: 'Classes', icon: 'classes' },
     { to: '/admin/teachers', label: 'Teachers', icon: 'teachers' },
     { to: '/admin/live-sessions', label: 'Live Sessions', icon: 'live-classes' },
@@ -145,12 +160,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { to: '/admin/notices', label: 'Notices', icon: 'notices' },
     { to: '/admin/enrollments', label: 'Enrollments', icon: 'enrollments' },
     { to: '/admin/payments', label: 'Payments', icon: 'payments' },
+    { to: '/admin/certificates', label: 'Certificates', icon: 'certificates' },
     ...(user?.isMasterAdmin ? [{ to: '/admin/admins', label: 'Admins', icon: 'admins' as IconName }] : []),
   ]
-
-
-
-
 
   const handleLogout = async () => {
     try {
@@ -177,7 +189,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }, [sidebarOpen])
 
   const pageTitle: AdminPageTitle =
-
     routeTitleMap[location.pathname] || routeTitleMap[location.pathname.split('/').slice(0, 3).join('/')] || 'Dashboard'
 
   return (
@@ -190,7 +201,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         }`}
       >
         <div className="flex h-16 items-center justify-between px-5 border-b border-border lg:hidden">
-          <Link to="/admin/dashboard" className="flex items-center gap-2">
+          <Link to="/" title="Go to Public Website" className="flex items-center gap-2">
             <img src="/eduflow_logo.png" alt="EduFlow" className="h-7 w-auto max-h-7 object-contain" />
             <span className="text-base font-bold text-text">EduFlow Admin</span>
           </Link>
@@ -206,13 +217,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         <div className="flex flex-col justify-between h-[calc(100%-4rem)] lg:h-full">
           <div className="px-4 py-5 overflow-y-auto">
-            <Link to="/admin/dashboard" className="hidden lg:flex items-center gap-2.5 mb-6 px-2">
+            <Link to="/" title="Go to Public Website" className="hidden lg:flex items-center gap-2.5 mb-6 px-2 group hover:opacity-90 transition-opacity">
               <img src="/eduflow_logo.png" alt="EduFlow" className="h-8 w-auto max-h-8 object-contain" />
               <div className="flex flex-col">
-                <span className="text-base font-bold text-text tracking-tight">EduFlow</span>
+                <span className="text-base font-bold text-text tracking-tight group-hover:text-primary transition-colors">EduFlow</span>
                 <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">Administration</span>
               </div>
             </Link>
+
 
 
             <nav className="space-y-1" aria-label="Admin">

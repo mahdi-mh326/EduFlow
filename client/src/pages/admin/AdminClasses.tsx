@@ -225,6 +225,52 @@ export function AdminClasses() {
                       ))}
                     </div>
                   )}
+                  {/* Seat Occupancy Meter */}
+                  {(() => {
+                    const capacity = cls.capacity || 30
+                    const current = cls.currentStudents || 0
+                    const percent = Math.min(100, Math.round((current / capacity) * 100))
+                    const isFull = current >= capacity
+                    const isNearFull = percent >= 80
+
+                    return (
+                      <div className="mt-3.5 max-w-sm rounded-xl border border-border bg-background/60 p-3">
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <span className="font-semibold text-text flex items-center gap-1.5">
+                            <span>👥 Seat Occupancy</span>
+                            {isFull ? (
+                              <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                                Batch Full
+                              </span>
+                            ) : isNearFull ? (
+                              <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                                Filling Fast
+                              </span>
+                            ) : (
+                              <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">
+                                Enrolling
+                              </span>
+                            )}
+                          </span>
+                          <span className="font-bold text-text">
+                            {current} / {capacity} ({percent}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              isFull
+                                ? 'bg-rose-500'
+                                : isNearFull
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(cls)} aria-label="Edit class">
@@ -235,8 +281,8 @@ export function AdminClasses() {
                   </Button>
                 </div>
               </div>
-
             </div>
+
           ))}
         </div>
       )}

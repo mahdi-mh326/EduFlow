@@ -23,7 +23,9 @@ export const StudentClassDetails = lazy(() => import('@/pages/student/StudentCla
 export const Classroom = lazy(() => import('@/pages/student/Classroom').then((module) => ({ default: module.Classroom })))
 
 export const Attendance = lazy(() => import('@/pages/student/Attendance').then((module) => ({ default: module.Attendance })))
+export const StudentCertificates = lazy(() => import('@/pages/student/StudentCertificates').then((module) => ({ default: module.StudentCertificates })))
 export const ChatbotPage = lazy(() => import('@/pages/student/Chatbot').then((module) => ({ default: module.ChatbotPage })))
+
 export const PaymentResult = lazy(() => import('@/pages/PaymentResult').then((module) => ({ default: module.PaymentResult })))
 export const StudentPayments = lazy(() => import('@/pages/student/StudentPayments').then((module) => ({ default: module.StudentPayments })))
 export const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard').then((module) => ({ default: module.TeacherDashboard })))
@@ -54,5 +56,9 @@ export const AdminPayments = lazy(() => import('@/pages/admin/AdminPayments').th
 export const AdminAdmins = lazy(() => import('@/pages/admin/AdminAdmins').then((module) => ({ default: module.AdminAdmins })))
 export const AdminStudents = lazy(() => import('@/pages/admin/AdminStudents').then((module) => ({ default: module.AdminStudents })))
 export const AdminProfile = lazy(() => import('@/pages/admin/AdminProfile').then((module) => ({ default: module.AdminProfile })))
+export const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates').then((module) => ({ default: module.AdminCertificates })))
+export const VerifyCertificate = lazy(() => import('@/pages/VerifyCertificate').then((module) => ({ default: module.VerifyCertificate })))
+
+
 
 

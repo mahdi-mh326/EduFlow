@@ -6,6 +6,7 @@ import {
   HowItWorks,
   LearningExperience,
   PlatformCapabilities,
+  FAQSection,
   FinalCTA,
 } from '@/components/home'
 
@@ -19,7 +20,9 @@ export default function Home() {
       <HowItWorks />
       <LearningExperience />
       <PlatformCapabilities />
+      <FAQSection />
       <FinalCTA />
     </>
   )
 }
+

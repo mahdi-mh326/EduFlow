@@ -11,7 +11,7 @@ import { ProfileDropdown } from '@/components/layout'
 
 
 
-type StudentPageTitle = 'Dashboard' | 'Home' | 'Assignments' | 'Study Materials' | 'Notices' | 'My Enrollments' | 'Notifications' | 'Courses' | 'Classes' | 'Quizzes' | 'Live Classes' | 'Attendance' | 'AI Assistant' | 'Profile'
+type StudentPageTitle = 'Dashboard' | 'Home' | 'Assignments' | 'Study Materials' | 'Notices' | 'My Enrollments' | 'Notifications' | 'Courses' | 'Classes' | 'Quizzes' | 'Live Classes' | 'Attendance' | 'Certificates' | 'AI Assistant' | 'Profile'
 
 const routeTitleMap: Record<string, StudentPageTitle> = {
   '/': 'Home',
@@ -21,6 +21,7 @@ const routeTitleMap: Record<string, StudentPageTitle> = {
   '/student/notices': 'Notices',
   '/student/quizzes': 'Quizzes',
   '/student/enrollments': 'My Enrollments',
+  '/student/certificates': 'Certificates',
   '/student/notifications': 'Notifications',
   '/courses': 'Courses',
   '/student/classes': 'Classes',
@@ -29,7 +30,7 @@ const routeTitleMap: Record<string, StudentPageTitle> = {
   '/student/profile': 'Profile',
 }
 
-type IconName = 'dashboard' | 'home' | 'courses' | 'classes' | 'enrollments' | 'notifications' | 'assignments' | 'materials' | 'notices' | 'quizzes' | 'live-classes' | 'attendance' | 'chatbot' | 'profile'
+type IconName = 'dashboard' | 'home' | 'courses' | 'classes' | 'enrollments' | 'notifications' | 'assignments' | 'materials' | 'notices' | 'quizzes' | 'live-classes' | 'attendance' | 'certificates' | 'chatbot' | 'profile'
 
 type SidebarLink = {
   to: string
@@ -46,11 +47,13 @@ const sidebarLinks: SidebarLink[] = [
   { to: '/student/assignments', label: 'Assignments', icon: 'assignments' },
   { to: '/student/quizzes', label: 'Quizzes', icon: 'quizzes' },
   { to: '/student/attendance', label: 'Attendance', icon: 'attendance' },
+  { to: '/student/certificates', label: 'Certificates & Progress', icon: 'certificates' },
   { to: '/student/chatbot', label: 'AI Assistant', icon: 'chatbot' },
   { to: '/student/enrollments', label: 'My Enrollments', icon: 'enrollments' },
   { to: '/student/notifications', label: 'Notifications', icon: 'notifications' },
   { to: '/courses', label: 'Course Catalog', icon: 'courses' },
 ]
+
 
 
 
@@ -139,7 +142,14 @@ function SidebarIcon({ name, className }: { name: IconName; className?: string }
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
+    certificates: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
     chatbot: (
+
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 8V4H8" />
         <rect width="16" height="12" x="4" y="8" rx="2" />

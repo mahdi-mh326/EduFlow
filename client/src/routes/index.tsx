@@ -13,9 +13,12 @@ import {
   TeacherQuizzes, TeacherQuizDetails, TeacherLiveClasses, TeacherClassroom, TeacherAttendance,
   TeacherMaterials, TeacherNotices,
   AdminDashboard, AdminCourses, AdminClasses, AdminTeachers, AdminEnrollments, AdminPayments, AdminAdmins,
-  AdminNotices, AdminLiveSessions, AdminAttendance, AdminStudents, AdminProfile,
-
+  AdminNotices, AdminLiveSessions, AdminAttendance, AdminStudents, AdminProfile, AdminCertificates,
+  VerifyCertificate, StudentCertificates,
 } from './components'
+
+
+
 
 
 
@@ -28,7 +31,10 @@ export const publicRoutes: ReactElement[] = [
   <Route key="verify-otp" path="/verify-otp" element={<VerifyOTP />} />,
   <Route key="forgot-password" path="/forgot-password" element={<ForgotPassword />} />,
   <Route key="set-password" path="/set-password" element={<ProtectedRoute><SetPassword /></ProtectedRoute>} />,
+  <Route key="verify-certificate" path="/verify-certificate" element={<VerifyCertificate />} />,
+  <Route key="verify-certificate-id" path="/verify-certificate/:certificateNumber" element={<VerifyCertificate />} />,
 ]
+
 
 
 export const studentRoutes: ReactElement[] = [
@@ -199,7 +205,19 @@ export const studentRoutes: ReactElement[] = [
     }
   />,
   <Route
+    key="student-certificates"
+    path="/student/certificates"
+    element={
+      <RoleRoute allowedRoles={['student']}>
+        <StudentLayout>
+          <StudentCertificates />
+        </StudentLayout>
+      </RoleRoute>
+    }
+  />,
+  <Route
     key="student-payments"
+
     path="/student/payments"
     element={
       <RoleRoute allowedRoles={['student']}>
@@ -516,6 +534,17 @@ export const adminRoutes: ReactElement[] = [
     }
   />,
   <Route
+    key="admin-certificates"
+    path="/admin/certificates"
+    element={
+      <RoleRoute allowedRoles={['admin']}>
+        <AdminLayout>
+          <AdminCertificates />
+        </AdminLayout>
+      </RoleRoute>
+    }
+  />,
+  <Route
     key="admin-profile"
     path="/admin/profile"
     element={
@@ -527,5 +556,6 @@ export const adminRoutes: ReactElement[] = [
     }
   />,
 ]
+
 
 

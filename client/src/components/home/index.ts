@@ -6,4 +6,6 @@ export { WhyEduFlow } from './WhyEduFlow'
 export { HowItWorks } from './HowItWorks'
 export { LearningExperience } from './LearningExperience'
 export { PlatformCapabilities } from './PlatformCapabilities'
+export { FAQSection } from './FAQSection'
 export { FinalCTA } from './FinalCTA'
+

@@ -7,6 +7,9 @@ import { paymentApi, redirectToPaymentGateway } from '@/services/api/payment'
 import { assignmentApi } from '@/services/api/assignment'
 import { quizApi } from '@/services/api/quiz'
 import { savedCourseApi, type SavedCourseItem } from '@/services/api/savedCourse'
+import { certificateApi } from '@/services/api/certificate'
+import { CertificateModal } from '@/components/certificate/CertificateModal'
+import type { Certificate } from '@/types/certificate'
 import { BookOpenIcon, UsersIcon, ClockIcon, InboxIcon, FileTextIcon, ClipboardListIcon, AlertCircleIcon, BookmarkIcon } from '@/components/ui/icons'
 import { formatCurrency, getImageUrl } from '@/utils'
 import type { Enrollment } from '@/types/enrollment'
@@ -81,15 +84,19 @@ export function MyEnrollments() {
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null)
   const [tasksByEnrollment, setTasksByEnrollment] = useState<Record<string, ClassTask[]>>({})
+  const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [activeCert, setActiveCert] = useState<Certificate | null>(null)
 
   const loadData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [enrollmentData, savedData] = await Promise.all([
+      const [enrollmentData, savedData, certData] = await Promise.all([
         enrollmentApi.getEnrollments(),
         savedCourseApi.getSavedCourses().catch(() => []),
+        certificateApi.getMyCertificates().catch(() => []),
       ])
+      setCertificates(certData)
 
       setEnrollments(enrollmentData)
       setSavedCourses(savedData)
@@ -409,16 +416,35 @@ export function MyEnrollments() {
                           </Button>
                         </Link>
                         {cls?._id ? (
-                          <Link to={`/student/classes/${cls._id}`}>
-                            <Button variant="primary" size="sm">
-                              Open Class Hub
-                            </Button>
-                          </Link>
+                          <>
+                            {(() => {
+                              const cert = certificates.find((c) => String((c.classId as any)?._id || c.classId) === String(cls._id))
+                              if (cert) {
+                                return (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setActiveCert(cert)}
+                                    className="border-amber-500/50 text-amber-700 bg-amber-50/50 hover:bg-amber-100 font-bold"
+                                  >
+                                    🎓 Certificate
+                                  </Button>
+                                )
+                              }
+                              return null
+                            })()}
+                            <Link to={`/student/classes/${cls._id}`}>
+                              <Button variant="primary" size="sm">
+                                Open Class Hub
+                              </Button>
+                            </Link>
+                          </>
                         ) : (
                           <Badge variant="warning" className="text-xs">
                             Batch Pending
                           </Badge>
                         )}
+
                       </div>
                     </div>
                   </div>
@@ -533,6 +559,15 @@ export function MyEnrollments() {
           loading={paymentLoading}
         />
       )}
+
+      {activeCert && (
+        <CertificateModal
+          certificate={activeCert}
+          open={Boolean(activeCert)}
+          onClose={() => setActiveCert(null)}
+        />
+      )}
     </Container>
   )
 }
+

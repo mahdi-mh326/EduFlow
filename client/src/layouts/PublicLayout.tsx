@@ -8,7 +8,9 @@ import { ChatbotButton } from '@/components/chatbot'
 const publicLinks = [
   { label: 'Home', href: '/' },
   { label: 'Courses', href: '/courses' },
+  { label: 'Verify Certificate', href: '/verify-certificate' },
 ]
+
 
 const roleDashboardMap: Record<string, string> = {
   student: '/student/dashboard',
@@ -92,34 +94,15 @@ export function PublicLayout() {
 
       <Footer
         brand={
-          <Link to="/" className="flex items-center gap-2.5 text-lg font-bold text-white group">
-            <img src="/eduflow_logo.png" alt="EduFlow" className="h-7 w-auto max-h-7 object-contain rounded-md bg-white/10 p-0.5" />
-            <span>EduFlow</span>
+          <Link to="/" className="flex items-center gap-2.5 text-lg font-bold text-text group">
+            <img src="/eduflow_logo.png" alt="EduFlow" className="h-8 w-auto max-h-8 object-contain" />
+            <span className="group-hover:text-primary transition-colors">EduFlow</span>
           </Link>
         }
-
-        description="Empowering learners and educators through modern technology."
-        groups={[
-          {
-            title: 'Platform',
-            links: [
-              { label: 'Home', href: '/' },
-              { label: 'Courses', href: '/courses' },
-            ],
-          },
-          {
-            title: 'Account',
-            links: isAuthenticated
-              ? []
-              : [
-                  { label: 'Login', href: '/login' },
-                  { label: 'Register', href: '/register' },
-                ],
-          },
-        ]}
-        copyright="© EduFlow. All rights reserved."
+        description="Empowering learners, instructors, and educational institutions with next-generation smart learning management tools."
       />
       <ChatbotButton />
     </div>
   )
 }
+

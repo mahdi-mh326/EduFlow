@@ -79,8 +79,10 @@ export function TeacherClassroom() {
     toggleVideo,
     toggleAudio,
     toggleScreenShare,
+    lowerParticipantHand,
     sendChatMessage,
   } = useClassroomSocket({
+
     sessionId: sessionId || '',
     accessToken: accessToken || undefined,
     currentUserId: user?.id,
@@ -270,15 +272,28 @@ export function TeacherClassroom() {
 
       {/* Hand Raised Notification Banner */}
       {raisedHands.length > 0 && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs text-amber-600 flex items-center justify-between">
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-700 flex flex-wrap items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2">
-            <span className="text-base">✋</span>
+            <span className="text-base animate-bounce">✋</span>
             <span>
-              <strong>{raisedHands.map((h) => h.displayName).join(', ')}</strong> raised hand with a question!
+              <strong>{raisedHands.map((h) => h.displayName).join(', ')}</strong> raised {raisedHands.length > 1 ? 'their hands' : 'hand'} with a question!
             </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {raisedHands.map((h) => (
+              <button
+                key={h.userId}
+                type="button"
+                onClick={() => lowerParticipantHand(h.userId)}
+                className="rounded-lg bg-amber-500 px-2 py-1 text-[11px] font-bold text-white hover:bg-amber-600 transition-all cursor-pointer"
+              >
+                Lower {h.displayName.split(' ')[0]}'s Hand
+              </button>
+            ))}
           </div>
         </div>
       )}
+
 
       {/* Main Classroom Body */}
       <div className="flex-1 p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-4 max-w-[1600px] mx-auto w-full">
@@ -496,11 +511,22 @@ export function TeacherClassroom() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        {p.isHandRaised && <span title="Hand Raised">✋</span>}
+                      <div className="flex items-center gap-1.5">
+                        {p.isHandRaised && (
+                          <button
+                            type="button"
+                            onClick={() => lowerParticipantHand(p.userId)}
+                            className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-500/30 transition-colors cursor-pointer"
+                            title="Click to lower hand"
+                          >
+                            <span>✋</span>
+                            <span>Lower</span>
+                          </button>
+                        )}
                         {p.isVideoOn ? <span title="Camera On">📹</span> : <span title="Camera Off">🚫</span>}
                         {p.isAudioOn ? <span title="Mic On">🎙️</span> : <span title="Mic Muted">🔇</span>}
                       </div>
+
                     </div>
                   ))}
                 </div>

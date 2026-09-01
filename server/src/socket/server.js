@@ -180,15 +180,17 @@ export const initSocketServer = (httpServer) => {
         });
 
         socket.on("raise-hand", (payload) => {
-          classroom.updateParticipantState(roomId, user._id.toString(), {
+          const targetUserId = payload.targetUserId || user._id.toString();
+          classroom.updateParticipantState(roomId, targetUserId, {
             isHandRaised: payload.isHandRaised,
           });
           io.to(roomId).emit("raise-hand", {
-            userId: user._id.toString(),
+            userId: targetUserId,
             userName: user.fullName,
             isHandRaised: payload.isHandRaised,
           });
         });
+
 
         socket.on("chat-message", (payload) => {
           io.to(roomId).emit("chat-message", {

@@ -57,6 +57,8 @@ export function TeacherAssignmentDetails() {
   const [marks, setMarks] = useState<number>(0)
   const [feedback, setFeedback] = useState<string>('')
   const [submittingGrade, setSubmittingGrade] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'graded'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const loadData = async () => {
     setLoading(true)
@@ -87,8 +89,8 @@ export function TeacherAssignmentDetails() {
     setFeedback(submission.feedback || '')
   }
 
-  const handleSaveGrade = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSaveGrade = async (e?: React.FormEvent, gradeNext: boolean = false) => {
+    if (e) e.preventDefault()
     if (!assignmentId || !gradingSubmission) return
 
     if (marks < 0 || (assignment && marks > assignment.totalMarks)) {
@@ -102,9 +104,38 @@ export function TeacherAssignmentDetails() {
         marks,
         feedback,
       })
-      toast.success('Submission graded successfully')
-      setGradingSubmission(null)
-      await loadData()
+
+      // Update in local state for instantaneous feedback
+      const updatedSubmissions = submissions.map((s) =>
+        s._id === gradingSubmission._id
+          ? {
+              ...s,
+              marks,
+              feedback,
+              status: 'graded' as const,
+              gradedAt: new Date().toISOString(),
+            }
+          : s
+      )
+      setSubmissions(updatedSubmissions)
+
+      if (gradeNext) {
+        // Find next submission that is still pending or not the current one
+        const remainingPending = updatedSubmissions.filter(
+          (s) => s.status !== 'graded' && s._id !== gradingSubmission._id
+        )
+        if (remainingPending.length > 0) {
+          const next = remainingPending[0]
+          toast.success(`Grade saved! Next student: ${next.studentId?.fullName || 'Student'}`)
+          openGradeModal(next)
+        } else {
+          toast.success('Grade saved! All pending submissions completed! 🎉')
+          setGradingSubmission(null)
+        }
+      } else {
+        toast.success('Submission graded successfully')
+        setGradingSubmission(null)
+      }
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to grade submission.'
       toast.error(message)
@@ -112,6 +143,7 @@ export function TeacherAssignmentDetails() {
       setSubmittingGrade(false)
     }
   }
+
 
   if (loading) {
     return (
@@ -161,7 +193,23 @@ export function TeacherAssignmentDetails() {
   const attachmentUrl = getSafeExternalUrl(assignment.attachmentUrl)
   const backUrl = assignment.classId?._id ? `/teacher/classes/${assignment.classId._id}` : '/teacher/classes'
 
+  const pendingSubmissions = submissions.filter((s) => s.status !== 'graded')
+  const gradedSubmissions = submissions.filter((s) => s.status === 'graded')
+
+  const filteredSubmissions = submissions.filter((s: TeacherSubmission) => {
+    if (statusFilter === 'pending' && s.status === 'graded') return false
+    if (statusFilter === 'graded' && s.status !== 'graded') return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const name = s.studentId?.fullName?.toLowerCase() || ''
+      const email = s.studentId?.email?.toLowerCase() || ''
+      return name.includes(q) || email.includes(q)
+    }
+    return true
+  })
+
   return (
+
     <div className="space-y-6">
       <div className="space-y-3">
         <Link to={backUrl} className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80">
@@ -229,15 +277,71 @@ export function TeacherAssignmentDetails() {
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Submissions</h2>
-          <span className="text-xs text-text-muted">{submissions.length} total</span>
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-text">Submissions</h2>
+            <p className="text-xs text-text-muted">
+              {filteredSubmissions.length} of {submissions.length} submissions shown
+            </p>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="flex rounded-xl border border-border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === 'all'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              All ({submissions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('pending')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === 'pending'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              Pending Review ({pendingSubmissions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('graded')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === 'graded'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              Graded ({gradedSubmissions.length})
+            </button>
+          </div>
         </div>
 
-        {submissions.length === 0 ? (
+        {/* Search Bar */}
+        <div className="mb-4 max-w-sm">
+          <input
+            type="text"
+            placeholder="Search student name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-3.5 py-2 text-xs text-text placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          />
+        </div>
+
+        {filteredSubmissions.length === 0 ? (
           <EmptyState
-            title="No submissions yet"
-            description="Student submissions will appear here."
+            title={searchQuery || statusFilter !== 'all' ? 'No matching submissions found' : 'No submissions yet'}
+            description={
+              searchQuery || statusFilter !== 'all'
+                ? 'Try changing the filter or search query.'
+                : 'Student submissions will appear here.'
+            }
             icon={<InboxIcon className="h-12 w-12" />}
           />
         ) : (
@@ -254,7 +358,7 @@ export function TeacherAssignmentDetails() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
-                {submissions.map((submission) => {
+                {filteredSubmissions.map((submission) => {
                   return (
                     <tr key={submission._id} className="hover:bg-background transition-colors duration-150">
                       <td className="px-4 py-3">
@@ -280,7 +384,7 @@ export function TeacherAssignmentDetails() {
                       <td className="px-4 py-3 text-sm text-text-muted max-w-[200px] truncate">{submission.feedback || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <Button
-                          variant="outline"
+                          variant={submission.status === 'graded' ? 'outline' : 'primary'}
                           size="sm"
                           onClick={() => openGradeModal(submission)}
                         >
@@ -325,7 +429,7 @@ export function TeacherAssignmentDetails() {
               </div>
             )}
 
-            <form onSubmit={handleSaveGrade} className="space-y-4">
+            <form onSubmit={(e) => handleSaveGrade(e, false)} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">
                   Marks (out of {assignment.totalMarks}) *
@@ -354,7 +458,7 @@ export function TeacherAssignmentDetails() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="ghost"
@@ -363,18 +467,32 @@ export function TeacherAssignmentDetails() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={submittingGrade}
-                >
-                  Submit Grade
-                </Button>
+                <div className="flex items-center gap-2">
+                  {submissions.some((s) => s.status !== 'graded' && s._id !== gradingSubmission._id) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleSaveGrade(undefined, true)}
+                      loading={submittingGrade}
+                      className="border-primary text-primary font-bold hover:bg-primary/10"
+                    >
+                      Save & Next →
+                    </Button>
+                  )}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={submittingGrade}
+                  >
+                    Save Grade
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   )
 }

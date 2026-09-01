@@ -295,11 +295,15 @@ export function useClassroomSocket({
     })
 
     // Hand raise events
-    socket.on('raise-hand', (payload) => {
+    socket.on('raise-hand', (payload: { userId: string; userName?: string; isHandRaised: boolean }) => {
       setParticipants((prev) =>
         prev.map((p) => (p.userId === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
       )
+      if (payload.userId === currentUserId) {
+        setIsHandRaised(payload.isHandRaised)
+      }
     })
+
 
     // Chat messages
     socket.on('chat-message', (message: ChatMessage) => {
@@ -572,6 +576,11 @@ export function useClassroomSocket({
     socketRef.current?.emit('raise-hand', { isHandRaised: newState })
   }, [isHandRaised])
 
+  // Lower participant hand (for teacher)
+  const lowerParticipantHand = useCallback((targetUserId: string) => {
+    socketRef.current?.emit('raise-hand', { targetUserId, isHandRaised: false })
+  }, [])
+
   // Send Chat Message
   const sendChatMessage = useCallback((text: string) => {
     if (!text.trim()) return
@@ -595,6 +604,8 @@ export function useClassroomSocket({
     toggleAudio,
     toggleScreenShare,
     toggleHandRaise,
+    lowerParticipantHand,
     sendChatMessage,
   }
 }
+

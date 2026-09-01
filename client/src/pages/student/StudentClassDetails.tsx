@@ -26,6 +26,9 @@ import {
   ClipboardListIcon,
 } from '@/components/ui/icons'
 import { materialApi } from '@/services/api/material'
+import { certificateApi } from '@/services/api/certificate'
+import { CertificateModal } from '@/components/certificate/CertificateModal'
+import type { Certificate, ClassProgress } from '@/types/certificate'
 import type { Material } from '@/types/material'
 import type { Assignment } from '@/types/assignment'
 import type { StudentQuiz } from '@/types/quiz'
@@ -82,6 +85,10 @@ export function StudentClassDetails() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [notices, setNotices] = useState<StudentNotice[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<StudentAttendance[]>([])
+  const [progress, setProgress] = useState<ClassProgress | null>(null)
+  const [certificate, setCertificate] = useState<Certificate | null>(null)
+  const [claimingCert, setClaimingCert] = useState(false)
+  const [showCertModal, setShowCertModal] = useState(false)
 
   const loadClassData = async () => {
     if (!classId) return
@@ -97,9 +104,11 @@ export function StudentClassDetails() {
         materialApi.getMaterials({ classId }),
         studentApi.getNotices(),
         studentApi.getAttendance({ limit: 100 }),
+        certificateApi.getProgress(classId),
+        certificateApi.getCertificateByClass(classId),
       ])
 
-      const [classRes, sessionsRes, assignRes, quizRes, materialRes, noticeRes, attendanceRes] = results
+      const [classRes, sessionsRes, assignRes, quizRes, materialRes, noticeRes, attendanceRes, progressRes, certRes] = results
 
       if (classRes.status === 'fulfilled') {
         setCls(classRes.value)
@@ -148,6 +157,14 @@ export function StudentClassDetails() {
         setAttendanceRecords(classAttendance)
       }
 
+      if (progressRes && progressRes.status === 'fulfilled') {
+        setProgress(progressRes.value)
+      }
+
+      if (certRes && certRes.status === 'fulfilled') {
+        setCertificate(certRes.value)
+      }
+
     } catch (err: any) {
       const message = err?.message || 'Failed to load class details.'
       setError(message)
@@ -160,6 +177,22 @@ export function StudentClassDetails() {
   useEffect(() => {
     loadClassData()
   }, [classId])
+
+  
+  const handleClaimCertificate = async () => {
+    if (!classId) return
+    setClaimingCert(true)
+    try {
+      const cert = await certificateApi.claimCertificate(classId)
+      setCertificate(cert)
+      setShowCertModal(true)
+      toast.success('Congratulations! Certificate generated successfully.')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Unable to claim certificate.')
+    } finally {
+      setClaimingCert(false)
+    }
+  }
 
   const activeLiveSession = liveSessions.find((s) => s.status === 'live')
   const isClassLive = Boolean(activeLiveSession)
@@ -253,6 +286,69 @@ export function StudentClassDetails() {
               <p className="text-sm font-bold text-text truncate">{teacher?.fullName || 'Assigned Instructor'}</p>
               <p className="text-xs text-text-muted truncate">{teacher?.email || 'N/A'}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      
+      {/* Course Progress & Certificate Banner */}
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3 flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-text">Overall Course Progress</span>
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                  {progress?.percentage || 0}% Complete
+                </span>
+              </div>
+              <span className="text-xs text-text-muted">
+                {progress?.completedItems || 0} of {progress?.totalItems || 0} tasks finished
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-2.5 w-full rounded-full bg-border/60 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-500"
+                style={{ width: `${progress?.percentage || 0}%` }}
+              />
+            </div>
+
+            {/* Breakdown Pills */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted pt-1">
+              <span>📡 Live Classes: <strong>{progress?.breakdown.live.attended || 0}/{progress?.breakdown.live.total || 0}</strong></span>
+              <span>•</span>
+              <span>📝 Assignments: <strong>{progress?.breakdown.assignments.submitted || 0}/{progress?.breakdown.assignments.total || 0}</strong></span>
+              <span>•</span>
+              <span>⏱️ Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
+            </div>
+          </div>
+
+          {/* Certificate Action */}
+          <div className="shrink-0 flex flex-col sm:flex-row items-center gap-3 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
+            {certificate ? (
+              <button
+                type="button"
+                onClick={() => setShowCertModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-amber-600 hover:to-amber-700 transition-all cursor-pointer"
+              >
+                🎓 View Certificate (ID: {certificate.certificateNumber.slice(-8)})
+              </button>
+            ) : progress?.isEligibleForCertificate ? (
+              <Button
+                onClick={handleClaimCertificate}
+                loading={claimingCert}
+                className="bg-gradient-to-r from-primary to-emerald-600 text-white font-bold"
+              >
+                🎓 Claim Certificate
+              </Button>
+            ) : (
+              <div className="text-center sm:text-right">
+                <p className="text-xs font-semibold text-text-muted">Certificate Locked</p>
+                <p className="text-[11px] text-text-muted">Reach 80% to claim</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -682,6 +778,13 @@ export function StudentClassDetails() {
           </div>
         )}
       </div>
+      {certificate && (
+        <CertificateModal
+          certificate={certificate}
+          open={showCertModal}
+          onClose={() => setShowCertModal(false)}
+        />
+      )}
     </div>
   )
 }

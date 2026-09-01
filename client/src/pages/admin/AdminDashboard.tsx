@@ -78,6 +78,45 @@ export function AdminDashboard() {
     loadDashboard()
   }, [])
 
+  const totalRevenue = useMemo(() => {
+    return payments
+      .filter((p) => p.status === 'paid')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+  }, [payments])
+
+  const monthlyAnalytics = useMemo(() => {
+    const months: Array<{ month: string; revenue: number; enrollments: number }> = []
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const mName = d.toLocaleDateString('en-US', { month: 'short' })
+
+      const mPayments = payments.filter((p) => {
+        if (p.status !== 'paid') return false
+        const pDate = new Date(p.createdAt || p.paidAt || p.enrolledAt)
+        return pDate.getFullYear() === d.getFullYear() && pDate.getMonth() === d.getMonth()
+      })
+      const mRev = mPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+
+      const mEnrolls = enrollments.filter((e) => {
+        const eDate = new Date(e.enrolledAt || e.createdAt)
+        return eDate.getFullYear() === d.getFullYear() && eDate.getMonth() === d.getMonth()
+      })
+
+      months.push({
+        month: mName,
+        revenue: mRev,
+        enrollments: mEnrolls.length,
+      })
+    }
+    return months
+  }, [payments, enrollments])
+
+  const maxMonthRev = useMemo(() => {
+    const max = Math.max(...monthlyAnalytics.map((m) => m.revenue), 1000)
+    return max
+  }, [monthlyAnalytics])
+
   const recentEnrollments = useMemo(() => {
     return [...enrollments].sort((a, b) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime()).slice(0, 5)
   }, [enrollments])
@@ -93,8 +132,8 @@ export function AdminDashboard() {
           <Skeleton variant="text" height="2rem" width="300px" className="mb-2" />
           <Skeleton variant="text" height="1rem" width="400px" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="rounded-xl border border-border bg-surface p-5">
               <Skeleton variant="text" height="1rem" width="120px" className="mb-3" />
               <Skeleton variant="text" height="2rem" width="80px" />
@@ -142,16 +181,65 @@ export function AdminDashboard() {
           Welcome, {user?.fullName?.split(' ')[0] || 'Admin'}
         </h1>
         <p className="mt-1 text-sm text-text-muted">
-          Manage courses, classes, teachers, enrollments, and payments.
+          Platform overview, financial growth, and real-time operations.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Top Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-5 w-5 text-emerald-600" />} />
         <StatCard label="Total Courses" value={courses.length.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} />
         <StatCard label="Total Classes" value={classes.length.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} />
         <StatCard label="Total Teachers" value={teachers.length.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} />
-        <StatCard label="Total Enrollments" value={enrollments.length.toString()} icon={<TrendingUpIcon className="h-5 w-5 text-success" />} />
+        <StatCard label="Total Enrollments" value={enrollments.length.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} />
       </div>
+
+      {/* Visual Revenue & Enrollment Analytics */}
+      <section className="rounded-2xl border border-border bg-surface p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-text">Revenue & Admissions Growth</h2>
+            <p className="text-xs text-text-muted">Monthly earnings overview and admissions growth trajectory</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 text-text">
+              <span className="h-3 w-3 rounded-sm bg-primary inline-block" />
+              Revenue (৳)
+            </span>
+            <span className="flex items-center gap-1.5 text-text-muted">
+              <span className="h-3 w-3 rounded-sm bg-emerald-500 inline-block" />
+              New Students
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-6 gap-2 sm:gap-6 pt-6 pb-2 items-end h-56 border-b border-border">
+          {monthlyAnalytics.map((item, idx) => {
+            const heightPercent = Math.max(10, Math.round((item.revenue / maxMonthRev) * 100))
+            return (
+              <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group">
+                <div className="text-[10px] sm:text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                  ৳{item.revenue.toLocaleString()}
+                </div>
+                <div className="w-full max-w-[48px] flex items-end justify-center gap-1 h-full">
+                  <div
+                    className="w-full bg-gradient-to-t from-primary to-primary/70 rounded-t-lg transition-all duration-500 hover:brightness-110 shadow-xs"
+                    style={{ height: `${heightPercent}%` }}
+                    title={`Revenue: ৳${item.revenue.toLocaleString()}`}
+                  />
+                </div>
+                <div className="text-[11px] sm:text-xs font-bold text-text-muted mt-2">
+                  {item.month}
+                </div>
+                <div className="text-[10px] text-emerald-600 font-semibold">
+                  +{item.enrollments} std
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-surface p-6">
