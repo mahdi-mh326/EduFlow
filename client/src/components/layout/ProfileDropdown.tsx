@@ -88,36 +88,38 @@ export function ProfileDropdown({
   }[theme]
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full sm:w-auto" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1.5 transition-all hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 ${themeClasses.activeRing}`}
+        className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 rounded-xl p-2 sm:px-2.5 sm:py-1.5 border border-border/80 sm:border-0 bg-slate-50/70 sm:bg-transparent transition-all hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 ${themeClasses.activeRing}`}
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label="User profile menu"
       >
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-full border overflow-hidden text-xs font-bold shadow-xs ${themeClasses.avatarBg}`}
-        >
-          {hasValidAvatar ? (
-            <img
-              src={avatarUrl}
-              alt={user?.fullName || 'User'}
-              className="h-full w-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            initials
-          )}
-        </div>
-        <div className="hidden text-left sm:block">
-          <p className="text-xs font-semibold text-text leading-tight max-w-[120px] truncate">
-            {user?.fullName}
-          </p>
-          <p className="text-[10px] text-text-muted capitalize leading-tight">
-            {roleLabel}
-          </p>
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full border overflow-hidden text-xs font-bold shadow-xs ${themeClasses.avatarBg}`}
+          >
+            {hasValidAvatar ? (
+              <img
+                src={avatarUrl}
+                alt={user?.fullName || 'User'}
+                className="h-full w-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              initials
+            )}
+          </div>
+          <div className="text-left">
+            <p className="text-xs font-semibold text-text leading-tight max-w-[140px] truncate">
+              {user?.fullName}
+            </p>
+            <p className="text-[10px] text-text-muted capitalize leading-tight">
+              {roleLabel}
+            </p>
+          </div>
         </div>
         <svg
           className={`h-4 w-4 text-text-muted transition-transform duration-200 ${
@@ -137,10 +139,11 @@ export function ProfileDropdown({
 
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-border bg-surface p-2 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+          className="w-full sm:w-64 sm:absolute sm:right-0 sm:top-full mt-2 origin-top rounded-2xl border border-border bg-surface p-2 shadow-sm sm:shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
           role="menu"
           aria-orientation="vertical"
         >
+
 
           {/* User Info Card */}
           <div className="rounded-xl bg-slate-50 border border-border/70 p-3 mb-1.5">

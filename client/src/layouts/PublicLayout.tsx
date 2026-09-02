@@ -40,10 +40,10 @@ export function PublicLayout() {
   }
 
   const authArea = isAuthenticated && user ? (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
       <Link
         to={roleDashboardMap[user.role] || '/courses'}
-        className="rounded-lg bg-primary/10 px-3.5 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+        className="rounded-xl bg-primary/10 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors text-center"
       >
         Go to Dashboard →
       </Link>
@@ -56,16 +56,17 @@ export function PublicLayout() {
       />
     </div>
   ) : (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
       <LoginDropdown />
       <Link
         to="/register"
-        className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 shadow-sm shadow-primary/20 transition-all"
+        className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 sm:py-2 text-xs font-semibold text-white hover:bg-primary/90 shadow-sm shadow-primary/20 transition-all text-center w-full sm:w-auto"
       >
         Get Started
       </Link>
     </div>
   )
+
 
 
   return (

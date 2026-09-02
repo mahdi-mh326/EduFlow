@@ -22,6 +22,10 @@ export function Navbar({ brand, links, authArea }: NavbarProps) {
   }
 
   useEffect(() => {
+    setOpen(false)
+  }, [location.pathname, location.search])
+
+  useEffect(() => {
     if (!open) return
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false)
@@ -29,6 +33,7 @@ export function Navbar({ brand, links, authArea }: NavbarProps) {
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [open, setOpen])
+
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-md shadow-xs">
