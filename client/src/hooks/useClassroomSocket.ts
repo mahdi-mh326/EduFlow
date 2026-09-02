@@ -370,29 +370,44 @@ export function useClassroomSocket({
   // Join Classroom Room
   const joinRoom = useCallback(async () => {
     const socket = socketRef.current
-    if (!socket || !socket.connected) {
-      setConnectionState('error')
-      onErrorRef.current?.({ message: 'Socket not connected. Please check your connection.', code: 'SOCKET_DISCONNECTED' })
+    if (!socket) {
+      onErrorRef.current?.({
+        message: 'Classroom socket is initializing. Please try again.',
+        code: 'SOCKET_INITIALIZING',
+      })
       return
     }
 
-    // Try starting local audio/video media
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
-      localStreamRef.current = stream
-      setLocalStream(stream)
-      setIsVideoOn(true)
-      setIsAudioOn(true)
-    } catch (mediaErr) {
-      console.warn('Could not auto-start camera/microphone, continuing without media:', mediaErr)
-      // Fallback: create empty stream or proceed without media
+    const startMediaAndEmitJoin = async (sock: Socket) => {
+      // Try starting local audio/video media
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        })
+        localStreamRef.current = stream
+        setLocalStream(stream)
+        setIsVideoOn(true)
+        setIsAudioOn(true)
+      } catch (mediaErr) {
+        console.warn('Could not auto-start camera/microphone, continuing without media:', mediaErr)
+      }
+
+      sock.emit('join-room', sessionId)
     }
 
-    socket.emit('join-room', sessionId)
+    if (!socket.connected) {
+      setConnectionState('connecting')
+      socket.connect()
+      socket.once('connect', () => {
+        startMediaAndEmitJoin(socket)
+      })
+      return
+    }
+
+    await startMediaAndEmitJoin(socket)
   }, [sessionId])
+
 
   // Leave Classroom Room
   const leaveRoom = useCallback(() => {

@@ -171,6 +171,17 @@ export const studentRoutes: ReactElement[] = [
     }
   />,
   <Route
+    key="student-live-classes-alias"
+    path="/student/live-classes"
+    element={
+      <RoleRoute allowedRoles={['student']}>
+        <StudentLayout>
+          <LiveClasses />
+        </StudentLayout>
+      </RoleRoute>
+    }
+  />,
+  <Route
     key="student-class-details"
     path="/student/classes/:classId"
     element={
@@ -192,6 +203,18 @@ export const studentRoutes: ReactElement[] = [
       </RoleRoute>
     }
   />,
+  <Route
+    key="student-classroom-alias"
+    path="/student/live-classes/:sessionId/classroom"
+    element={
+      <RoleRoute allowedRoles={['student']}>
+        <StudentLayout>
+          <Classroom />
+        </StudentLayout>
+      </RoleRoute>
+    }
+  />,
+
 
   <Route
     key="student-attendance"
@@ -367,13 +390,14 @@ export const teacherRoutes: ReactElement[] = [
     key="teacher-classroom"
     path="/teacher/live-classes/:sessionId/classroom"
     element={
-      <RoleRoute allowedRoles={['teacher']}>
+      <RoleRoute allowedRoles={['teacher', 'admin']}>
         <TeacherLayout>
           <TeacherClassroom />
         </TeacherLayout>
       </RoleRoute>
     }
   />,
+
   <Route
     key="teacher-attendance"
     path="/teacher/attendance"
@@ -465,6 +489,40 @@ export const adminRoutes: ReactElement[] = [
       </RoleRoute>
     }
   />,
+  <Route
+    key="admin-live-classes-alias"
+    path="/admin/live-classes"
+    element={
+      <RoleRoute allowedRoles={['admin']}>
+        <AdminLayout>
+          <AdminLiveSessions />
+        </AdminLayout>
+      </RoleRoute>
+    }
+  />,
+  <Route
+    key="admin-classroom"
+    path="/admin/live-sessions/:sessionId/classroom"
+    element={
+      <RoleRoute allowedRoles={['admin']}>
+        <AdminLayout>
+          <TeacherClassroom />
+        </AdminLayout>
+      </RoleRoute>
+    }
+  />,
+  <Route
+    key="admin-classroom-alias"
+    path="/admin/live-classes/:sessionId/classroom"
+    element={
+      <RoleRoute allowedRoles={['admin']}>
+        <AdminLayout>
+          <TeacherClassroom />
+        </AdminLayout>
+      </RoleRoute>
+    }
+  />,
+
   <Route
     key="admin-attendance"
     path="/admin/attendance"

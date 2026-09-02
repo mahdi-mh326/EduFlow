@@ -127,8 +127,13 @@ export function TeacherClassroom() {
 
   const handleLeave = () => {
     leaveRoom()
-    navigate('/teacher/live-classes')
+    if (user?.role === 'admin') {
+      navigate('/admin/live-sessions')
+    } else {
+      navigate('/teacher/live-classes')
+    }
   }
+
 
   const handleStart = async () => {
     if (!session || session.status !== 'scheduled') return
@@ -198,9 +203,12 @@ export function TeacherClassroom() {
         <ErrorState
           title="Unable to load live session"
           message={error || 'This session was not found.'}
-          onRetry={() => navigate('/teacher/live-classes')}
+          onRetry={() => navigate(user?.role === 'admin' ? '/admin/live-sessions' : '/teacher/live-classes')}
           secondaryAction={
-            <Button variant="outline" onClick={() => navigate('/teacher/live-classes')}>
+            <Button
+              variant="outline"
+              onClick={() => navigate(user?.role === 'admin' ? '/admin/live-sessions' : '/teacher/live-classes')}
+            >
               View Live Classes
             </Button>
           }
@@ -208,6 +216,7 @@ export function TeacherClassroom() {
       </Container>
     )
   }
+
 
   const course = session.courseId
   const cls = session.classId
@@ -254,6 +263,12 @@ export function TeacherClassroom() {
                 >
                   {isLive ? '● Live' : session.status}
                 </Badge>
+                {user?.role === 'admin' && (
+                  <Badge variant="primary" className="text-[10px] font-semibold">
+                    Admin Observer
+                  </Badge>
+                )}
+
               </div>
               <p className="text-xs text-text-muted">
                 {course?.title} • {cls?.batchName}

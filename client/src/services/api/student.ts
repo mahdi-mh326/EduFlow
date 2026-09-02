@@ -18,6 +18,12 @@ export const studentApi = {
     return data.data
   },
 
+  getLiveSessionById: async (id: string): Promise<StudentLiveSession> => {
+    const { data } = await apiClient.get(`/live-sessions/${id}`)
+    return data.data
+  },
+
+
   getAttendance: async (params?: { page?: number; limit?: number }): Promise<{
     meta: { total: number; page: number; limit: number; totalPages: number }
     data: StudentAttendance[]

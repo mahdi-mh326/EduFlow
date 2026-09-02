@@ -4,6 +4,7 @@ import env from "../config/env.js";
 import User from "../modules/user/user.model.js";
 import { USER_STATUS, USER_ROLE } from "../modules/user/user.constant.js";
 import LiveSession from "../modules/live-session/live-session.model.js";
+import Class from "../modules/class/class.model.js";
 import Enrollment from "../modules/enrollment/enrollment.model.js";
 import {
   ENROLLMENT_STATUS,
@@ -54,16 +55,23 @@ const canAccessClassroom = async (user, sessionId) => {
     return { session, role: "admin" };
   }
 
-  // Teacher access: if scheduled, automatically transition to LIVE when teacher enters
+  // Teacher access: if scheduled, completed, or cancelled, resume to LIVE when teacher enters
   if (user.role === USER_ROLE.TEACHER) {
-    if (session.teacherId.toString() !== user._id.toString()) {
+    const isTeacherOfSession = session.teacherId && session.teacherId.toString() === user._id.toString();
+    const cls = session.classId ? await Class.findById(session.classId) : null;
+    const isTeacherOfClass = cls && cls.teacherId && cls.teacherId.toString() === user._id.toString();
+
+    if (!isTeacherOfSession && !isTeacherOfClass) {
       return { error: "You are not authorized to access this classroom", code: 403 };
     }
-    if (session.status === LIVE_SESSION_STATUS.SCHEDULED) {
+
+    if (
+      session.status === LIVE_SESSION_STATUS.SCHEDULED ||
+      session.status === LIVE_SESSION_STATUS.COMPLETED ||
+      session.status === LIVE_SESSION_STATUS.CANCELLED
+    ) {
       session.status = LIVE_SESSION_STATUS.LIVE;
       await session.save();
-    } else if (session.status !== LIVE_SESSION_STATUS.LIVE) {
-      return { error: "Classroom is not available for this session", code: 403 };
     }
     return { session, role: "teacher" };
   }
@@ -76,9 +84,11 @@ const canAccessClassroom = async (user, sessionId) => {
 
     const enrolled = await Enrollment.findOne({
       studentId: user._id,
-      classId: session.classId,
+      $or: [
+        { classId: session.classId },
+        { courseId: session.courseId },
+      ],
       status: ENROLLMENT_STATUS.ACTIVE,
-      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 
@@ -91,6 +101,7 @@ const canAccessClassroom = async (user, sessionId) => {
 
   return { error: "You are not authorized to access this classroom", code: 403 };
 };
+
 
 
 export const initSocketServer = (httpServer) => {

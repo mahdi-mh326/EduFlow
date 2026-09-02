@@ -185,29 +185,40 @@ const getLiveSessionById = async (id, userId, userRole) => {
   }
 
   if (userRole === USER_ROLE.TEACHER) {
-    if (session.teacherId._id.toString() !== userId.toString()) {
+    const isTeacherOfSession =
+      session.teacherId?._id?.toString() === userId.toString() ||
+      session.teacherId?.toString() === userId.toString();
+    const cls = session.classId
+      ? await Class.findById(session.classId._id || session.classId)
+      : null;
+    const isTeacherOfClass = cls && cls.teacherId?.toString() === userId.toString();
+
+    if (!isTeacherOfSession && !isTeacherOfClass) {
       throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
     }
     return session;
   }
 
   if (userRole === USER_ROLE.STUDENT) {
+    const classId = session.classId?._id || session.classId;
+    const courseId = session.courseId?._id || session.courseId;
+
     const enrolled = await Enrollment.findOne({
       studentId: userId,
-      classId: session.classId._id,
+      $or: [{ classId }, { courseId }],
       status: ENROLLMENT_STATUS.ACTIVE,
-      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     });
 
     if (!enrolled) {
-      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+      throw new ApiError(403, "You are not enrolled in this session's class");
     }
     return session;
   }
 
   throw new ApiError(403, "You are not authorized to access this session");
 };
+
 
 const updateLiveSession = async (id, payload, userId, userRole) => {
   const session = await LiveSession.findOne({
@@ -289,19 +300,24 @@ const deleteLiveSession = async (id, userId, userRole) => {
 };
 
 const getStudentLiveSessions = async (studentId) => {
-  const enrolledClassIds = await Enrollment.find({
+  const activeEnrollments = await Enrollment.find({
     studentId,
     status: ENROLLMENT_STATUS.ACTIVE,
-    paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
     isDeleted: { $ne: true },
-  }).distinct("classId");
+  });
 
-  if (enrolledClassIds.length === 0) {
+  if (activeEnrollments.length === 0) {
     return [];
   }
 
+  const enrolledClassIds = activeEnrollments.map((e) => e.classId).filter(Boolean);
+  const enrolledCourseIds = activeEnrollments.map((e) => e.courseId).filter(Boolean);
+
   const sessions = await LiveSession.find({
-    classId: { $in: enrolledClassIds },
+    $or: [
+      { classId: { $in: enrolledClassIds } },
+      { courseId: { $in: enrolledCourseIds } },
+    ],
     status: { $in: [LIVE_SESSION_STATUS.SCHEDULED, LIVE_SESSION_STATUS.LIVE] },
     isDeleted: { $ne: true },
   })
@@ -312,6 +328,7 @@ const getStudentLiveSessions = async (studentId) => {
 
   return sessions;
 };
+
 
 const startLiveSession = async (id, userId) => {
   const session = await LiveSession.findOne({

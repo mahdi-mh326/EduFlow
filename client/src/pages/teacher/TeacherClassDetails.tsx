@@ -771,9 +771,12 @@ export function TeacherClassDetails() {
 
       {/* TAB CONTENT: Notices */}
       {activeTab === 'notices' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-text">Class Notices & Announcements</h2>
+            <div>
+              <h2 className="text-lg font-bold text-text">Class Notices & Announcements</h2>
+              <p className="text-xs text-text-muted">Post announcements and updates directly to all students in this class.</p>
+            </div>
             <Button
               variant="primary"
               size="sm"
@@ -781,22 +784,69 @@ export function TeacherClassDetails() {
               onClick={() => setOpenNoticeModal(true)}
             >
               <PlusIcon className="h-4 w-4" />
-              Post Notice
+              Post Notice (Modal)
             </Button>
+          </div>
+
+          {/* Quick Notice Composer Card Directly Inside Tab */}
+          <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+            <h3 className="text-sm font-bold text-text mb-3 flex items-center gap-2">
+              <AlertCircleIcon className="h-4 w-4 text-primary" />
+              Write & Publish Notice
+            </h3>
+            <form onSubmit={handleCreateNotice} className="space-y-3">
+              <Input
+                id="inline-notice-title"
+                label="Notice Title"
+                required
+                value={noticeForm.title}
+                onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })}
+                placeholder="e.g. Class Rescheduled, Quiz Reminder, or Holiday Notice"
+              />
+              <TextArea
+                id="inline-notice-desc"
+                label="Notice Description / Announcement"
+                required
+                value={noticeForm.description}
+                onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })}
+                placeholder="Type your notice message here..."
+                rows={3}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="w-full sm:w-56">
+                  <Select
+                    id="inline-notice-priority"
+                    label="Priority"
+                    value={noticeForm.priority}
+                    onChange={(e) => setNoticeForm({ ...noticeForm, priority: e.target.value })}
+                    options={[
+                      { value: 'low', label: 'Low (Informative)' },
+                      { value: 'medium', label: 'Medium (Standard)' },
+                      { value: 'high', label: 'High Priority (Urgent)' },
+                    ]}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  loading={savingNotice}
+                  disabled={!noticeForm.title.trim() || !noticeForm.description.trim()}
+                  className="mt-2 sm:mt-5"
+                >
+                  Publish Notice
+                </Button>
+              </div>
+            </form>
           </div>
 
           {notices.length === 0 ? (
             <EmptyState
-              title="No notices posted"
-              description="Post important announcements, schedule changes, or exam reminders."
+              title="No notices posted yet"
+              description="Write a notice above to post announcements, schedule changes, or exam reminders."
               icon={<AlertCircleIcon className="h-10 w-10" />}
-              action={
-                <Button variant="primary" size="sm" onClick={() => setOpenNoticeModal(true)}>
-                  Post First Notice
-                </Button>
-              }
             />
           ) : (
+
             <div className="space-y-3">
               {notices.map((notice) => (
                 <div key={notice._id} className="rounded-xl border border-border bg-surface p-5 space-y-2">
@@ -1009,13 +1059,16 @@ export function TeacherClassDetails() {
       <Modal open={openNoticeModal} onClose={() => setOpenNoticeModal(false)} title="Post Class Notice">
         <form onSubmit={handleCreateNotice} className="space-y-4">
           <Input
+            id="modal-notice-title"
             label="Notice Title"
             required
+            autoFocus
             value={noticeForm.title}
             onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })}
             placeholder="e.g. Class Rescheduled or Quiz Reminder"
           />
           <TextArea
+            id="modal-notice-description"
             label="Notice Description / Announcement"
             required
             value={noticeForm.description}
@@ -1024,6 +1077,7 @@ export function TeacherClassDetails() {
             rows={4}
           />
           <Select
+            id="modal-notice-priority"
             label="Priority"
             value={noticeForm.priority}
             onChange={(e) => setNoticeForm({ ...noticeForm, priority: e.target.value })}
@@ -1033,6 +1087,7 @@ export function TeacherClassDetails() {
               { value: 'high', label: 'High Priority' },
             ]}
           />
+
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" type="button" onClick={() => setOpenNoticeModal(false)}>
               Cancel

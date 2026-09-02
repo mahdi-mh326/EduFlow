@@ -333,9 +333,9 @@ export function AdminLiveSessions() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border">
-                  {isLive && (
+                  {isLive ? (
                     <>
-                      <Link to={`/teacher/live-classes/${session._id}/classroom`}>
+                      <Link to={`/admin/live-sessions/${session._id}/classroom`}>
                         <Button
                           variant="primary"
                           size="sm"
@@ -356,20 +356,27 @@ export function AdminLiveSessions() {
                         End Class
                       </Button>
                     </>
+                  ) : (
+                    <>
+                      <Link to={`/admin/live-sessions/${session._id}/classroom`}>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                          <MonitorIcon className="h-4 w-4" />
+                          Inspect Room
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-text-muted hover:text-error hover:border-error/30"
+                        onClick={() => handleDeleteSession(session._id)}
+                        disabled={actionSessionId === session._id}
+                        title="Delete Record"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
 
-                  {!isLive && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-text-muted hover:text-error hover:border-error/30"
-                      onClick={() => handleDeleteSession(session._id)}
-                      disabled={actionSessionId === session._id}
-                      title="Delete Record"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
             )

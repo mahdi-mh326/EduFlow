@@ -95,21 +95,34 @@ export function Classroom() {
     setJoinError(null)
 
     studentApi
-      .getLiveSessions()
-      .then((sessions) => {
-        const found = sessions.find((s) => s._id === sessionId)
-        if (found) {
-          setSession(found)
+      .getLiveSessionById(sessionId)
+      .then((sess) => {
+        if (sess) {
+          setSession(sess)
         } else {
           setError('This live session was not found or is no longer available.')
         }
       })
-      .catch((err: any) => {
-        const message = err?.response?.data?.message || 'Unable to load this live session.'
-        setError(message)
+      .catch(() => {
+        // Fallback to getLiveSessions list
+        studentApi
+          .getLiveSessions()
+          .then((sessions) => {
+            const found = sessions.find((s) => s._id === sessionId)
+            if (found) {
+              setSession(found)
+            } else {
+              setError('This live session was not found or is no longer available.')
+            }
+          })
+          .catch((err: any) => {
+            const message = err?.response?.data?.message || 'Unable to load this live session.'
+            setError(message)
+          })
       })
       .finally(() => setLoading(false))
   }, [sessionId])
+
 
   useEffect(() => {
     return () => {
