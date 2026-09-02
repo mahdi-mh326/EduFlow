@@ -36,7 +36,14 @@ type SidebarLink = {
 const sidebarLinks: SidebarLink[] = [
   { to: '/teacher/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/teacher/classes', label: 'My Classes', icon: 'classes' },
+  { to: '/teacher/live-classes', label: 'Live Classes', icon: 'live-classes' },
+  { to: '/teacher/assignments', label: 'Assignments', icon: 'assignments' },
+  { to: '/teacher/quizzes', label: 'Quizzes', icon: 'quizzes' },
+  { to: '/teacher/attendance', label: 'Attendance', icon: 'attendance' },
+  { to: '/teacher/materials', label: 'Study Materials', icon: 'materials' },
+  { to: '/teacher/notices', label: 'Notices', icon: 'notices' },
 ]
+
 
 
 

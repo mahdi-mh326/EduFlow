@@ -3,7 +3,9 @@ import Enrollment from "./enrollment.model.js";
 import Class from "../class/class.model.js";
 import User from "../user/user.model.js";
 import Course from "../course/course.model.js";
+import SavedCourse from "../saved-course/saved-course.model.js";
 import ApiError from "../../shared/ApiError.js";
+
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
@@ -112,11 +114,19 @@ const createEnrollment = async ({ courseId, classId, studentId, paymentStatus },
     });
 
 
+    // Automatically remove course from student's saved wishlist once enrolled
+    try {
+      await SavedCourse.deleteOne({ studentId, courseId });
+    } catch {
+      // Non-critical cleanup
+    }
+
     return enrollment;
   } finally {
     await session.endSession();
   }
 };
+
 
 
 const getEnrollments = async (userId, userRole, query = {}) => {

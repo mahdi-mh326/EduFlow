@@ -321,9 +321,11 @@ export function CourseDetails() {
           classes={classes}
           onSuccess={() => {
             setEnrollmentStatus('active')
+            setIsSaved(false)
             setShowEnrollmentModal(false)
           }}
         />
+
       )}
     </section>
   )

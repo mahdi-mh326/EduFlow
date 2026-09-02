@@ -3,6 +3,8 @@ import sendResponse from "../../shared/sendResponse.js";
 import SavedCourse from "./saved-course.model.js";
 import Course from "../course/course.model.js";
 import Class from "../class/class.model.js";
+import Enrollment from "../enrollment/enrollment.model.js";
+import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
 import ApiError from "../../shared/ApiError.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
 
@@ -17,6 +19,18 @@ const toggleSaveCourse = catchAsync(async (req, res) => {
   const course = await Course.findOne({ _id: courseId, isDeleted: { $ne: true } });
   if (!course) {
     throw new ApiError(404, "Course not found");
+  }
+
+  const isEnrolled = await Enrollment.exists({
+    studentId,
+    courseId,
+    status: ENROLLMENT_STATUS.ACTIVE,
+    isDeleted: { $ne: true },
+  });
+
+  if (isEnrolled) {
+    await SavedCourse.deleteOne({ studentId, courseId });
+    throw new ApiError(400, "You are already enrolled in this course");
   }
 
   const existing = await SavedCourse.findOne({ studentId, courseId });
@@ -46,7 +60,25 @@ const toggleSaveCourse = catchAsync(async (req, res) => {
 const getSavedCourses = catchAsync(async (req, res) => {
   const studentId = req.user._id;
 
-  const savedList = await SavedCourse.find({ studentId })
+  // Find all courses where the student has an active enrollment
+  const activeEnrollments = await Enrollment.find({
+    studentId,
+    status: ENROLLMENT_STATUS.ACTIVE,
+    isDeleted: { $ne: true },
+  }).distinct("courseId");
+
+  // Clean up any stale saved course records for enrolled courses
+  if (activeEnrollments.length > 0) {
+    await SavedCourse.deleteMany({
+      studentId,
+      courseId: { $in: activeEnrollments },
+    });
+  }
+
+  const savedList = await SavedCourse.find({
+    studentId,
+    courseId: { $nin: activeEnrollments },
+  })
     .populate({
       path: "courseId",
       match: { isDeleted: { $ne: true } },
@@ -89,6 +121,24 @@ const checkCourseSaved = catchAsync(async (req, res) => {
   const studentId = req.user._id;
   const { courseId } = req.params;
 
+  // If already actively enrolled in this course, it is not saved
+  const isEnrolled = await Enrollment.exists({
+    studentId,
+    courseId,
+    status: ENROLLMENT_STATUS.ACTIVE,
+    isDeleted: { $ne: true },
+  });
+
+  if (isEnrolled) {
+    await SavedCourse.deleteOne({ studentId, courseId });
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Saved status retrieved",
+      data: { isSaved: false },
+    });
+  }
+
   const saved = await SavedCourse.findOne({ studentId, courseId });
 
   sendResponse(res, {
@@ -98,6 +148,7 @@ const checkCourseSaved = catchAsync(async (req, res) => {
     data: { isSaved: Boolean(saved) },
   });
 });
+
 
 export const SavedCourseController = {
   toggleSaveCourse,
