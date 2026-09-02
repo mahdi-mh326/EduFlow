@@ -98,7 +98,12 @@ const initiatePayment = async (payload, createdBy) => {
   await checkExistingEnrollment(createdBy, courseId);
   await checkExistingPaidPayment(createdBy, courseId);
 
-  if (!course.price || course.price <= 0) {
+  const payableAmount =
+    course.offerPrice != null && course.offerPrice > 0
+      ? course.offerPrice
+      : course.price;
+
+  if (!payableAmount || payableAmount <= 0) {
     throw new ApiError(400, PAYMENT_MESSAGES.INVALID_AMOUNT);
   }
 
@@ -119,15 +124,20 @@ const initiatePayment = async (payload, createdBy) => {
   if (existingPendingPayment) {
     payment = await Payment.findByIdAndUpdate(
       existingPendingPayment._id,
-      { transactionId },
+      {
+        transactionId,
+        amount: payableAmount,
+        classId: cls ? cls._id : existingPendingPayment.classId,
+        status: PAYMENT_STATUS.PENDING,
+      },
       { new: true }
     );
   } else {
     payment = await Payment.create({
       studentId: createdBy,
       courseId,
-      classId,
-      amount: course.price,
+      classId: cls ? cls._id : undefined,
+      amount: payableAmount,
       currency: "BDT",
       gateway: PAYMENT_GATEWAY.SSLCOMMERZ,
       transactionId,
@@ -136,23 +146,52 @@ const initiatePayment = async (payload, createdBy) => {
     });
   }
 
+  const backendBase =
+    process.env.BACKEND_URL ||
+    (process.env.NODE_ENV === "production" || process.env.RENDER
+      ? "https://eduflow-backend-eqb1.onrender.com"
+      : `http://localhost:${process.env.PORT || 5000}`);
+
+  const isProd =
+    process.env.NODE_ENV === "production" ||
+    Boolean(process.env.RENDER) ||
+    Boolean(process.env.PORT && process.env.PORT !== "5000");
+
+  let successUrl = process.env.PAYMENT_SUCCESS_URL;
+  let failUrl = process.env.PAYMENT_FAIL_URL;
+  let cancelUrl = process.env.PAYMENT_CANCEL_URL;
+  let ipnUrl = process.env.PAYMENT_IPN_URL;
+
+  if (!successUrl || (isProd && successUrl.includes("localhost"))) {
+    successUrl = `${backendBase}/api/v1/payments/success`;
+  }
+  if (!failUrl || (isProd && failUrl.includes("localhost"))) {
+    failUrl = `${backendBase}/api/v1/payments/fail`;
+  }
+  if (!cancelUrl || (isProd && cancelUrl.includes("localhost"))) {
+    cancelUrl = `${backendBase}/api/v1/payments/cancel`;
+  }
+  if (!ipnUrl || (isProd && ipnUrl.includes("localhost"))) {
+    ipnUrl = `${backendBase}/api/v1/payments/ipn`;
+  }
+
   let sslResponse;
   try {
     sslResponse = await PaymentUtils.initiateSslCommerzPayment({
       amount: payment.amount.toFixed(2),
       currency: payment.currency,
       transactionId: payment.transactionId,
-      successUrl: process.env.PAYMENT_SUCCESS_URL,
-      failUrl: process.env.PAYMENT_FAIL_URL,
-      cancelUrl: process.env.PAYMENT_CANCEL_URL,
-      ipnUrl: process.env.PAYMENT_IPN_URL,
+      successUrl,
+      failUrl,
+      cancelUrl,
+      ipnUrl,
       productName: course.title,
       productCategory: "Course",
       productProfile: "general",
-      customerName: student.fullName,
-      customerEmail: student.email,
-      customerPhone: student.phone,
-      customerAddress: "",
+      customerName: student.fullName || "Student",
+      customerEmail: student.email || "student@eduflow.com",
+      customerPhone: student.phone || "01700000000",
+      customerAddress: "Dhaka, Bangladesh",
     });
   } catch (error) {
     const gatewayData = error.response?.data || error.message;
@@ -186,6 +225,7 @@ const initiatePayment = async (payload, createdBy) => {
     gatewayUrl: sslResponse.GatewayPageURL,
   };
 };
+
 
 const ensureEnrollmentForPayment = async (payment) => {
   const existing = await Enrollment.findOne({
@@ -594,6 +634,28 @@ const getPaymentById = async (id) => {
   return payment;
 };
 
+const getPaymentByTranId = async (transactionId, userId, role) => {
+  const filter = {
+    transactionId,
+    isDeleted: { $ne: true },
+  };
+
+  if (role === USER_ROLE.STUDENT) {
+    filter.studentId = userId;
+  }
+
+  const payment = await Payment.findOne(filter)
+    .populate("studentId", "fullName email phone")
+    .populate("courseId", "title slug price offerPrice thumbnail")
+    .populate("classId", "batchName startDate endDate");
+
+  if (!payment) {
+    throw new ApiError(404, PAYMENT_MESSAGES.PAYMENT_NOT_FOUND);
+  }
+
+  return payment;
+};
+
 export const PaymentService = {
   initiatePayment,
   handlePaymentSuccess,
@@ -603,4 +665,6 @@ export const PaymentService = {
   getStudentPayments,
   getPayments,
   getPaymentById,
+  getPaymentByTranId,
 };
+

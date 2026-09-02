@@ -34,7 +34,17 @@ const env = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "r2q5ywkk",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "581934686522572",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "KYnmBKMkG965WSMDXRMCz7acQcA",
+
+  backendUrl: process.env.BACKEND_URL || (process.env.NODE_ENV === "production" ? "https://eduflow-backend-eqb1.onrender.com" : "http://localhost:5000"),
+  sslStoreId: process.env.SSL_STORE_ID || "hexby6a743d31c9023",
+  sslStorePassword: process.env.SSL_STORE_PASSWORD || "hexby6a743d31c9023@ssl",
+  sslIsLive: process.env.SSL_IS_LIVE === "true",
+  paymentSuccessUrl: process.env.PAYMENT_SUCCESS_URL,
+  paymentFailUrl: process.env.PAYMENT_FAIL_URL,
+  paymentCancelUrl: process.env.PAYMENT_CANCEL_URL,
+  paymentIpnUrl: process.env.PAYMENT_IPN_URL,
 };
+
 
 
 

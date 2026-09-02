@@ -32,10 +32,21 @@ router.get(
   PaymentController.getStudentPayments
 );
 
+router.get(
+  "/verify/:tranId",
+  authenticate,
+  PaymentController.getPaymentByTransactionId
+);
+
+router.get(
+  "/:id",
+  authenticate,
+  PaymentController.getPaymentById
+);
+
 router.use(authenticate, authorize(USER_ROLE.ADMIN));
 
 router.get("/", PaymentController.getPayments);
 
-router.get("/:id", PaymentController.getPaymentById);
-
 export default router;
+

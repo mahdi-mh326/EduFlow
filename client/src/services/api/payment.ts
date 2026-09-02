@@ -65,7 +65,7 @@ export function redirectToPaymentGateway(gatewayUrl: string): void {
     throw new Error('The payment gateway returned an unsafe redirect URL.')
   }
 
-  window.open(destination.toString(), '_blank', 'noopener,noreferrer')
+  window.location.href = destination.toString()
 }
 
 export const paymentApi = {
@@ -83,4 +83,10 @@ export const paymentApi = {
     const { data } = await apiClient.get(`/payments/${id}`)
     return data.data
   },
+
+  getPaymentByTranId: async (tranId: string): Promise<Payment> => {
+    const { data } = await apiClient.get(`/payments/verify/${encodeURIComponent(tranId)}`)
+    return data.data
+  },
 }
+

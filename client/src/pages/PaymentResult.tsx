@@ -32,9 +32,26 @@ export function PaymentResult() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const tranId = searchParams.get('tran_id')
+  const queryStatus = searchParams.get('status')
+  const queryMessage = searchParams.get('message')
 
   useEffect(() => {
+    if (queryStatus === 'failed') {
+      setStatus('failed')
+      if (queryMessage) setErrorMessage(queryMessage)
+      return
+    }
+
+    if (queryStatus === 'cancelled') {
+      setStatus('cancelled')
+      return
+    }
+
     if (!tranId) {
+      if (queryStatus === 'success') {
+        setStatus('success')
+        return
+      }
       setStatus('error')
       setErrorMessage('Missing transaction ID.')
       return
@@ -42,24 +59,38 @@ export function PaymentResult() {
 
     const verifyPayment = async () => {
       try {
-        const payments = await paymentApi.getStudentPayments()
-        const found = payments.find((p) => p.transactionId === tranId)
+        let found: Payment | undefined
+        try {
+          found = await paymentApi.getPaymentByTranId(tranId)
+        } catch {
+          const payments = await paymentApi.getStudentPayments()
+          found = payments.find((p) => p.transactionId === tranId)
+        }
+
         if (found) {
           setPayment(found)
-          const mappedStatus = found.status === 'paid' ? 'success' : (found.status as PaymentResultStatus)
+          const mappedStatus =
+            found.status === 'paid' ? 'success' : (found.status as PaymentResultStatus)
           setStatus(mappedStatus)
+        } else if (queryStatus === 'success') {
+          setStatus('success')
         } else {
           setStatus('pending')
           setErrorMessage('Payment record not found yet. It may still be processing.')
         }
       } catch (err: any) {
-        setStatus('error')
-        setErrorMessage(err?.response?.data?.message || 'Unable to verify payment status.')
+        if (queryStatus === 'success') {
+          setStatus('success')
+        } else {
+          setStatus('error')
+          setErrorMessage(err?.response?.data?.message || 'Unable to verify payment status.')
+        }
       }
     }
 
     verifyPayment()
-  }, [tranId])
+  }, [tranId, queryStatus, queryMessage])
+
 
   const getIcon = () => {
     switch (status) {
