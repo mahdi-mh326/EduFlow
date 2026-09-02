@@ -193,6 +193,31 @@ const newQuiz = (fullName, data) => wrap(`
   ${footer("#BE185D")}
 `);
 
+const courseBatchAvailable = (fullName, data) => wrap(`
+  <tr>
+    <td style="background:linear-gradient(135deg,#2563EB,#3B82F6);padding:40px;text-align:center;">
+      <h1 style="margin:0;color:#FFFFFF;font-size:22px;font-weight:700;font-family:Arial,sans-serif;">New Class Batch Open!</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:32px 40px;">
+      <p style="margin:0 0 8px;font-size:16px;font-weight:700;color:#0F172A;font-family:Arial,sans-serif;">Hello, ${fullName} &#128075;</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#475569;line-height:1.7;font-family:Arial,sans-serif;">
+        Great news! You previously saved the course <strong>"${data.courseTitle || "Course"}"</strong>. A new class batch <strong>"${data.batchName || "Batch"}"</strong> is now officially open for enrollment!
+      </p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${data.courseUrl || BASE_URL}" style="display:inline-block;background:#2563EB;color:#FFFFFF;font-size:14px;font-weight:700;padding:12px 32px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;box-shadow:0 4px 12px rgba(37,99,235,0.25);">
+          View Course &amp; Enroll &rarr;
+        </a>
+      </div>
+      <p style="margin:0;font-size:12px;color:#94A3B8;font-family:Arial,sans-serif;text-align:center;">
+        Seats are limited. Enroll early to secure your spot in this batch.
+      </p>
+    </td>
+  </tr>
+  ${footer("#2563EB")}
+`);
+
 export const notificationEmailTemplates = {
   [NOTIFICATION_TYPE.ENROLLMENT_CREATED]: enrollmentConfirmation,
   [NOTIFICATION_TYPE.PAYMENT_SUCCESS]: paymentSuccess,
@@ -203,4 +228,6 @@ export const notificationEmailTemplates = {
   [NOTIFICATION_TYPE.LIVE_SESSION_CANCELLED]: liveSessionCancelled,
   [NOTIFICATION_TYPE.ASSIGNMENT_CREATED]: newAssignment,
   [NOTIFICATION_TYPE.QUIZ_CREATED]: newQuiz,
+  [NOTIFICATION_TYPE.COURSE_BATCH_AVAILABLE]: courseBatchAvailable,
 };
+

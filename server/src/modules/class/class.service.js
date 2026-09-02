@@ -4,8 +4,13 @@ import Course from "../course/course.model.js";
 import Enrollment from "../enrollment/enrollment.model.js";
 import SavedCourse from "../saved-course/saved-course.model.js";
 import { NotificationService } from "../notification/notification.service.js";
+import { NOTIFICATION_TYPE } from "../notification/notification.constant.js";
+import sendEmail from "../../utils/email/sendEmail.js";
+import { notificationEmailTemplates } from "../../utils/email/notification.templates.js";
+import env from "../../config/env.js";
 import ApiError from "../../shared/ApiError.js";
 import logger from "../../shared/logger.js";
+
 
 
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
@@ -103,22 +108,24 @@ const createClass = async (payload, createdBy) => {
 
     if (savedEntries.length > 0) {
       const course = await Course.findById(payload.courseId);
-      const notifications = savedEntries
-        .filter((entry) => entry.studentId && entry.studentId._id)
-        .map((entry) => ({
-          recipientId: entry.studentId._id,
-          type: "course_batch_available",
-          title: `New Batch Open for ${course?.title || "Course"}`,
-          message: `Class batch "${classDoc.batchName}" is now open for enrollment in "${course?.title || "your saved course"}". Enroll now!`,
-          data: {
-            courseId: course?._id,
-            courseSlug: course?.slug,
-            classId: classDoc._id,
-            batchName: classDoc.batchName,
-          },
-          resourceId: classDoc._id,
-          createdBy,
-        }));
+      const validEntries = savedEntries.filter(
+        (entry) => entry.studentId && entry.studentId._id
+      );
+
+      const notifications = validEntries.map((entry) => ({
+        recipientId: entry.studentId._id,
+        type: NOTIFICATION_TYPE.COURSE_BATCH_AVAILABLE,
+        title: `New Batch Open for ${course?.title || "Course"}`,
+        message: `Class batch "${classDoc.batchName}" is now open for enrollment in "${course?.title || "your saved course"}". Enroll now!`,
+        data: {
+          courseId: course?._id,
+          courseSlug: course?.slug,
+          classId: classDoc._id,
+          batchName: classDoc.batchName,
+        },
+        resourceId: classDoc._id.toString(),
+        createdBy,
+      }));
 
       if (notifications.length > 0) {
         await NotificationService.bulkCreateNotifications(notifications);
@@ -127,10 +134,39 @@ const createClass = async (payload, createdBy) => {
           { isNotified: true }
         );
       }
+
+      // Send Email notifications asynchronously to each saved student
+      const clientBase = env.clientUrl || "http://localhost:5173";
+      const courseUrl = course?.slug
+        ? `${clientBase}/courses/${course.slug}`
+        : `${clientBase}/courses`;
+
+      for (const entry of validEntries) {
+        const student = entry.studentId;
+        if (student && student.email) {
+          try {
+            await sendEmail({
+              to: student.email,
+              subject: `New Class Batch Open: ${course?.title || "Course"}`,
+              html: notificationEmailTemplates[NOTIFICATION_TYPE.COURSE_BATCH_AVAILABLE](
+                student.fullName || "Student",
+                {
+                  courseTitle: course?.title || "Course",
+                  batchName: classDoc.batchName,
+                  courseUrl,
+                }
+              ),
+            });
+          } catch (emailErr) {
+            logger.warn(`[ClassService] Failed to send batch email to ${student.email}: ${emailErr.message}`);
+          }
+        }
+      }
     }
   } catch (err) {
     logger.error(`[ClassService] Failed to notify saved course students: ${err.message}`);
   }
+
 
   const populated = await Class.findById(classDoc._id)
     .populate("courseId", "title slug")

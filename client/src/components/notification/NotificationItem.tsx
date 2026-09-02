@@ -1,21 +1,14 @@
 import { getTypeIcon, formatRelativeTime } from '@/utils/notification'
 import type { Notification } from '@/types/notification'
 
-function getAssignmentId(notification: Notification): string | null {
-  if (notification.type === 'assignment_created' || notification.type === 'assignment_updated') {
-    return notification.data?.assignmentId || notification.resourceId?.split('_').slice(2).join('_') || null
-  }
-  return null
-}
-
 interface NotificationItemProps {
   notification: Notification
   onClick?: () => void
 }
 
 export function NotificationItem({ notification, onClick }: NotificationItemProps) {
-  const assignmentId = getAssignmentId(notification)
   const content = (
+
     <div
       className={`flex gap-3 rounded-lg border p-3 transition-colors duration-150 ${
         notification.isRead
@@ -45,12 +38,12 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
     </div>
   )
 
-  if (assignmentId && onClick) {
+  if (onClick) {
     return (
       <button
         type="button"
         onClick={onClick}
-        className="w-full text-left"
+        className="w-full text-left cursor-pointer transition-transform active:scale-[0.99]"
       >
         {content}
       </button>
@@ -58,4 +51,5 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
   }
 
   return content
+
 }

@@ -6,7 +6,9 @@ import { notificationApi } from '@/services/api/notification'
 import { InboxIcon, XIcon } from '@/components/ui/icons'
 import type { Notification } from '@/types/notification'
 import { useNotificationStore } from '@/stores/notification.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { NotificationItem } from './NotificationItem'
+
 
 interface NotificationDropdownProps {
   open: boolean
@@ -99,13 +101,55 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
     }
   }
 
+  const user = useAuthStore((state) => state.user)
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
   if (!open) return null
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.type === 'course_batch_available') {
+      const slugOrId = notification.data?.courseSlug || notification.data?.courseId
+      if (slugOrId) {
+        navigate(`/courses/${slugOrId}`)
+        onClose()
+      }
+    } else if (
+      notification.type === 'assignment_created' ||
+      notification.type === 'assignment_updated'
+    ) {
+      const assignmentId =
+        notification.data?.assignmentId ||
+        notification.resourceId?.split('_').slice(2).join('_')
+      if (assignmentId) {
+        navigate(`/student/assignments/${assignmentId}`)
+        onClose()
+      }
+    } else if (
+      notification.type === 'live_session_scheduled' ||
+      notification.type === 'live_session_started' ||
+      notification.type === 'live_session_updated'
+    ) {
+      navigate('/student/live-classes')
+      onClose()
+    } else if (notification.type === 'notice_created') {
+      navigate('/student/notices')
+      onClose()
+    }
+  }
+
+  const viewAllLink =
+    user?.role === 'teacher'
+      ? '/teacher/notices'
+      : user?.role === 'admin'
+      ? '/admin/notices'
+      : '/student/notifications'
+
   return (
-    <div data-notification-dropdown className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-1rem)] max-w-80 sm:max-w-96 rounded-xl border border-border bg-surface shadow-lg">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <div
+      data-notification-dropdown
+      className="fixed inset-x-3 top-16 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 rounded-2xl border border-border bg-surface shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-surface">
         <div>
           <h3 className="text-sm font-semibold text-text">Notifications</h3>
           {unreadCount > 0 && (
@@ -128,7 +172,7 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
         </div>
       </div>
 
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-[calc(100vh-12rem)] sm:max-h-96 overflow-y-auto">
         {loading && notifications.length === 0 ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -161,25 +205,15 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
               <div key={notification._id} className="relative group">
                 <NotificationItem
                   notification={notification}
-                  onClick={
-                    notification.type === 'assignment_created' || notification.type === 'assignment_updated'
-                      ? () => {
-                          const assignmentId = notification.data?.assignmentId || notification.resourceId?.split('_').slice(2).join('_')
-                          if (assignmentId) {
-                            navigate(`/student/assignments/${assignmentId}`)
-                            onClose()
-                          }
-                        }
-                      : undefined
-                  }
+                  onClick={() => handleNotificationClick(notification)}
                 />
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-surface/90 backdrop-blur-xs rounded-lg p-0.5 shadow-xs">
                   {!notification.isRead && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleMarkAsRead(notification._id)}
-                      className="text-xs"
+                      className="text-xs h-7 px-2"
                     >
                       Read
                     </Button>
@@ -188,7 +222,7 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
                     variant="ghost"
                     size="sm"
                     onClick={(e) => handleDelete(notification._id, e)}
-                    className="text-xs text-error hover:text-error"
+                    className="text-xs text-error hover:text-error h-7 w-7 p-0 flex items-center justify-center"
                     aria-label="Delete notification"
                   >
                     <XIcon className="h-3 w-3" />
@@ -201,8 +235,8 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
       </div>
 
       {notifications.length > 0 && (
-        <div className="border-t border-border p-2">
-          <Link to="/student/notifications" onClick={onClose} className="block">
+        <div className="border-t border-border p-2 bg-surface">
+          <Link to={viewAllLink} onClick={onClose} className="block">
             <Button variant="ghost" fullWidth size="sm">
               View all notifications
             </Button>
@@ -212,3 +246,4 @@ export function NotificationDropdown({ open, onClose }: NotificationDropdownProp
     </div>
   )
 }
+

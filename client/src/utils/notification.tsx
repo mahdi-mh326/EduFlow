@@ -40,10 +40,13 @@ export function getTypeIcon(type: NotificationType) {
     case 'quiz_created':
     case 'quiz_updated':
       return <UsersIcon className="h-4 w-4 text-primary" />
+    case 'course_batch_available':
+      return <BookOpenIcon className="h-4 w-4 text-emerald-600" />
     default:
       return <BellIcon className="h-4 w-4 text-text-muted" />
   }
 }
+
 
 export function mapTypeToLabel(type: NotificationType): string {
   switch (type) {
@@ -71,6 +74,8 @@ export function mapTypeToLabel(type: NotificationType): string {
       return 'Quiz'
     case 'quiz_updated':
       return 'Quiz'
+    case 'course_batch_available':
+      return 'New Batch'
     default:
       return 'Notification'
   }

@@ -276,21 +276,22 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur-md shadow-xs">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="rounded-lg p-2 text-text hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+                className="rounded-lg p-2 text-text hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden shrink-0"
                 aria-label="Open menu"
                 aria-expanded={sidebarOpen}
                 aria-controls="student-sidebar"
               >
                 <MenuIcon className="h-5 w-5" />
               </button>
-              <h1 className="text-base font-bold text-text">{pageTitle}</h1>
+              <h1 className="text-sm sm:text-base font-bold text-text truncate min-w-0">{pageTitle}</h1>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+
               <NotificationBell />
               <div className="h-4 w-px bg-border hidden sm:block" />
               <ProfileDropdown

@@ -139,10 +139,11 @@ export function ProfileDropdown({
 
       {isOpen && (
         <div
-          className="w-full sm:w-64 sm:absolute sm:right-0 sm:top-full mt-2 origin-top rounded-2xl border border-border bg-surface p-2 shadow-sm sm:shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top rounded-2xl border border-border bg-surface p-2 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
           role="menu"
           aria-orientation="vertical"
         >
+
 
 
           {/* User Info Card */}

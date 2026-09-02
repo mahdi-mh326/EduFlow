@@ -11,6 +11,8 @@ export type NotificationType =
   | 'assignment_updated'
   | 'quiz_created'
   | 'quiz_updated'
+  | 'course_batch_available'
+
 
 export interface Notification {
   _id: string

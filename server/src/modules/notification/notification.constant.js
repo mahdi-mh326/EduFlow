@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPE = {
   ASSIGNMENT_UPDATED: "assignment_updated",
   QUIZ_CREATED: "quiz_created",
   QUIZ_UPDATED: "quiz_updated",
+  COURSE_BATCH_AVAILABLE: "course_batch_available",
 };
 
 export const NOTIFICATION_MESSAGES = {
@@ -26,4 +27,6 @@ export const NOTIFICATION_MESSAGES = {
   ASSIGNMENT_UPDATED: "Assignment updated",
   QUIZ_CREATED: "New quiz published",
   QUIZ_UPDATED: "Quiz updated",
+  COURSE_BATCH_AVAILABLE: "New class batch available for your saved course",
 };
+
