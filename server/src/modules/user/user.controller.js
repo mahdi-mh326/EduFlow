@@ -2,6 +2,7 @@ import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { UserService } from "./user.service.js";
 import ApiError from "../../shared/ApiError.js";
+import { uploadStreamToCloudinary } from "../../config/cloudinary.js";
 
 const getMe = catchAsync(async (req, res) => {
   const result = await UserService.getMe(req.user._id);
@@ -30,7 +31,11 @@ const uploadAvatar = catchAsync(async (req, res) => {
     throw new ApiError(400, "Avatar file is required.");
   }
 
-  const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+  const uploadResult = await uploadStreamToCloudinary(req.file.buffer, {
+    folder: "eduflow/avatars",
+    resource_type: "image",
+  });
+  const avatarUrl = uploadResult.url;
 
   const result = await UserService.updateProfile(req.user._id, { avatar: avatarUrl });
 
@@ -44,6 +49,7 @@ const uploadAvatar = catchAsync(async (req, res) => {
     },
   });
 });
+
 
 
 const changePassword = catchAsync(async (req, res) => {

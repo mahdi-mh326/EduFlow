@@ -77,7 +77,7 @@ export function TeacherDashboard() {
     setError(null)
     try {
       const results = await Promise.allSettled([
-        teacherApi.getClasses({ limit: 50, teacherId: user?.id }),
+        teacherApi.getClasses({ limit: 50, teacherId: user?.id || (user as any)?._id }),
         teacherApi.getEnrollments(),
         teacherApi.getAssignments({ limit: 20 }),
         teacherApi.getQuizzes({ limit: 20 }),
@@ -121,7 +121,7 @@ export function TeacherDashboard() {
     loadDashboard()
   }, [])
 
-  const teacherId = user?.id
+  const teacherId = user?.id || (user as any)?._id
 
   // Filter teacher's assigned classes
   const myClasses = useMemo(() => {

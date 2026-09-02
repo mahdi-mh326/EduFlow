@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { env } from '@/config/env'
 
@@ -38,8 +38,19 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp',
+        'turns:openrelay.metered.ca:443?transport=tcp',
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
 }
+
 
 export function useClassroomSocket({
   sessionId,
@@ -48,10 +59,36 @@ export function useClassroomSocket({
   onRoomJoined,
   onError,
 }: UseClassroomSocketOptions) {
+  // Derive effective user ID from options or JWT token payload to prevent undefined ID bugs
+  const effectiveUserId = useMemo(() => {
+    if (currentUserId) return String(currentUserId)
+    if (accessToken) {
+      try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]))
+        return String(payload.id || payload._id || payload.userId || '')
+      } catch {
+        // ignore
+      }
+    }
+    return ''
+  }, [currentUserId, accessToken])
+
   const socketRef = useRef<Socket | null>(null)
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting')
   const [participants, setParticipants] = useState<Participant[]>([])
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+
+  // Helper to deduplicate participants by userId
+  const dedupeParticipants = useCallback((list: Participant[]) => {
+    const map = new Map<string, Participant>()
+    for (const p of list) {
+      if (p.userId) {
+        map.set(p.userId, p)
+      }
+    }
+    return Array.from(map.values())
+  }, [])
+
 
   // Local media states
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
@@ -199,13 +236,13 @@ export function useClassroomSocket({
 
     socket.on('room-joined', async (payload) => {
       setHasJoined(true)
-      const existingParticipants: Participant[] = payload.participants || []
+      const existingParticipants: Participant[] = dedupeParticipants(payload.participants || [])
       setParticipants(existingParticipants)
       onRoomJoinedRef.current?.(payload)
 
       // Initiate WebRTC offers to existing participants in the room
       for (const p of existingParticipants) {
-        if (p.userId !== currentUserId) {
+        if (p.userId && p.userId !== effectiveUserId) {
           try {
             const pc = createPeerConnection(p.userId, socket)
             const offer = await pc.createOffer({
@@ -225,21 +262,21 @@ export function useClassroomSocket({
     })
 
     socket.on('participant-joined', (payload) => {
-      setParticipants(payload.participants || [])
+      setParticipants(dedupeParticipants(payload.participants || []))
     })
 
     socket.on('participant-left', (payload) => {
       if (payload.userId) {
         removePeerConnection(payload.userId)
       }
-      setParticipants(payload.participants || [])
+      setParticipants(dedupeParticipants(payload.participants || []))
     })
 
     // WebRTC Offer received
     socket.on('offer', async (payload) => {
       const fromUserId = payload.from
-      if (!fromUserId || fromUserId === currentUserId) return
-      if (payload.to && payload.to !== currentUserId) return
+      if (!fromUserId || (effectiveUserId && fromUserId === effectiveUserId)) return
+      if (payload.to && effectiveUserId && payload.to !== effectiveUserId) return
 
       try {
         const pc = createPeerConnection(fromUserId, socket)
@@ -258,8 +295,8 @@ export function useClassroomSocket({
     // WebRTC Answer received
     socket.on('answer', async (payload) => {
       const fromUserId = payload.from
-      if (!fromUserId || fromUserId === currentUserId) return
-      if (payload.to && payload.to !== currentUserId) return
+      if (!fromUserId || (effectiveUserId && fromUserId === effectiveUserId)) return
+      if (payload.to && effectiveUserId && payload.to !== effectiveUserId) return
 
       try {
         const pc = peerConnections.current.get(fromUserId)
@@ -274,8 +311,8 @@ export function useClassroomSocket({
     // ICE Candidate received
     socket.on('ice-candidate', async (payload) => {
       const fromUserId = payload.from
-      if (!fromUserId || fromUserId === currentUserId) return
-      if (payload.to && payload.to !== currentUserId) return
+      if (!fromUserId || (effectiveUserId && fromUserId === effectiveUserId)) return
+      if (payload.to && effectiveUserId && payload.to !== effectiveUserId) return
 
       try {
         const pc = peerConnections.current.get(fromUserId)
@@ -299,11 +336,10 @@ export function useClassroomSocket({
       setParticipants((prev) =>
         prev.map((p) => (p.userId === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
       )
-      if (payload.userId === currentUserId) {
+      if (payload.userId === effectiveUserId) {
         setIsHandRaised(payload.isHandRaised)
       }
     })
-
 
     // Chat messages
     socket.on('chat-message', (message: ChatMessage) => {
@@ -328,7 +364,8 @@ export function useClassroomSocket({
         screenStreamRef.current = null
       }
     }
-  }, [accessToken, sessionId, currentUserId, createPeerConnection, removePeerConnection])
+  }, [accessToken, sessionId, effectiveUserId, createPeerConnection, removePeerConnection, dedupeParticipants])
+
 
   // Join Classroom Room
   const joinRoom = useCallback(async () => {

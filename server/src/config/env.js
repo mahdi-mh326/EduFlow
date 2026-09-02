@@ -30,7 +30,12 @@ const env = {
   aiModel: process.env.AI_MODEL || "gemini-3.1-flash-lite",
   aiBaseURL: process.env.AI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
   aiTimeout: process.env.AI_TIMEOUT || "30000",
+
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "r2q5ywkk",
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "581934686522572",
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "KYnmBKMkG965WSMDXRMCz7acQcA",
 };
+
 
 
 export default env;

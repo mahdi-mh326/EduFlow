@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { TextArea } from '@/components/ui/TextArea'
 import { Select } from '@/components/ui/Select'
+import { FileUploadDropzone } from '@/components/ui/FileUploadDropzone'
+
 import { teacherApi } from '@/services/api/teacher'
 import type { TeacherAssignment, TeacherClass, CreateAssignmentPayload, UpdateAssignmentPayload } from '@/types/teacher'
 
@@ -153,12 +155,27 @@ export function TeacherAssignmentForm({
           placeholder="Instructions for students"
           rows={3}
         />
-        <Input
-          label="Attachment URL"
-          value={formData.attachmentUrl}
-          onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
-          placeholder="https://example.com/file.pdf"
-        />
+        <div className="space-y-2">
+          <FileUploadDropzone
+            label="Upload Assignment Document / Questions (Drag & Drop)"
+            hint="Upload PDF, Doc, or Zip up to 25MB"
+            folder="eduflow/assignments"
+            value={formData.attachmentUrl}
+            onChange={(url) => setFormData({ ...formData, attachmentUrl: url })}
+            onRemove={() => setFormData({ ...formData, attachmentUrl: '' })}
+          />
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">
+              Or Enter Attachment URL
+            </label>
+            <Input
+              value={formData.attachmentUrl}
+              onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
+              placeholder="https://example.com/file.pdf"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Due Date"

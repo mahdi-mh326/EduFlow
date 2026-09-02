@@ -1,8 +1,15 @@
 import { useState, type FormEvent } from 'react'
-import { Button, TextArea, ConfirmDialog } from '@/components'
+import { Button, TextArea, ConfirmDialog, FileUploadDropzone } from '@/components'
+
+export interface SubmissionPayload {
+  content: string
+  attachmentUrl?: string
+}
 
 interface SubmissionFormProps {
-  onSubmit: (content: string) => Promise<void>
+  onSubmit: (payload: SubmissionPayload) => Promise<void>
+  initialContent?: string
+  initialAttachmentUrl?: string
   submitLabel?: string
   submitting?: boolean
   helperText?: string
@@ -14,15 +21,18 @@ interface SubmissionFormProps {
 
 export function SubmissionForm({
   onSubmit,
+  initialContent = '',
+  initialAttachmentUrl = '',
   submitLabel = 'Submit Assignment',
   submitting = false,
   helperText,
   confirmTitle = 'Submit Assignment?',
-  confirmMessage = 'Once submitted, your assignment will be sent to your teacher. Please review your answer before confirming.',
+  confirmMessage = 'Once submitted, your assignment will be sent to your teacher. Please review your answer and attached file before confirming.',
   confirmLabel = 'Submit Assignment',
-  rows = 6,
+  rows = 5,
 }: SubmissionFormProps) {
-  const [content, setContent] = useState('')
+  const [content, setContent] = useState(initialContent)
+  const [attachmentUrl, setAttachmentUrl] = useState(initialAttachmentUrl)
   const [localError, setLocalError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -33,8 +43,8 @@ export function SubmissionForm({
     setLocalError(null)
 
     const trimmed = content.trim()
-    if (!trimmed) {
-      setLocalError('Please write your answer before submitting.')
+    if (!trimmed && !attachmentUrl) {
+      setLocalError('Please write your answer or attach a file before submitting.')
       return
     }
 
@@ -47,7 +57,10 @@ export function SubmissionForm({
     setSubmitted(true)
 
     try {
-      await onSubmit(content.trim())
+      await onSubmit({
+        content: content.trim(),
+        attachmentUrl: attachmentUrl || undefined,
+      })
     } catch {
       setSubmitted(false)
     } finally {
@@ -68,18 +81,26 @@ export function SubmissionForm({
       <form onSubmit={handleFormSubmit} className="space-y-4">
         <TextArea
           id="submission-content"
-          label="Your Answer"
-          placeholder="Write your submission here..."
+          label="Your Answer / Notes"
+          placeholder="Write your submission notes or answers here..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          required
           rows={rows}
           error={localError || undefined}
           helperText={helperText}
           disabled={submitting || isSubmitting}
         />
 
-        <div className="flex items-center gap-3">
+        <FileUploadDropzone
+          label="Attached Assignment File (Direct Upload)"
+          hint="Drop your homework file (PDF, Doc, Images, Zip up to 25MB) or click to browse"
+          folder="eduflow/assignments"
+          value={attachmentUrl}
+          onChange={(url) => setAttachmentUrl(url)}
+          onRemove={() => setAttachmentUrl('')}
+        />
+
+        <div className="flex items-center gap-3 pt-2">
           <Button
             type="submit"
             variant="primary"

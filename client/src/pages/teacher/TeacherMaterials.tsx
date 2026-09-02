@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'react-hot-toast'
-import { Button, Badge, Skeleton, EmptyState, ErrorState, Container } from '@/components'
+import { Button, Badge, Skeleton, EmptyState, ErrorState, Container, FileUploadDropzone } from '@/components'
 import { materialApi } from '@/services/api/material'
 import { teacherApi } from '@/services/api/teacher'
 import {
@@ -422,19 +422,36 @@ export function TeacherMaterials() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">
-                  File URL or Link *
-                </label>
-                <input
-                  type="url"
-                  required
+              <div className="space-y-2">
+                <FileUploadDropzone
+                  label="Upload Study Material File (Drag & Drop)"
+                  hint="Directly upload PDF, Slides, Docs, Images, or Zip up to 25MB"
+                  folder="eduflow/materials"
                   value={formData.fileUrl}
-                  onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-                  placeholder="https://storage.googleapis.com/... or https://..."
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  onChange={(url, detectedType) => {
+                    setFormData({
+                      ...formData,
+                      fileUrl: url,
+                      ...(detectedType ? { fileType: detectedType } : {}),
+                    })
+                  }}
+                  onRemove={() => setFormData({ ...formData, fileUrl: '' })}
                 />
+
+                <div className="pt-1">
+                  <label className="block text-xs font-medium text-text-muted mb-1">
+                    Or Enter File / Drive URL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.fileUrl}
+                    onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
+                    placeholder="https://drive.google.com/... or https://..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  />
+                </div>
               </div>
+
 
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">

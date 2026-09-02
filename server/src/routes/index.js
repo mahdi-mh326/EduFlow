@@ -20,6 +20,7 @@ import quizRoutes from "../modules/quiz/quiz.route.js";
 import notificationRoutes from "../modules/notification/notification.route.js";
 import savedCourseRoutes from "../modules/saved-course/saved-course.route.js";
 import { CertificateRoutes } from "../modules/certificate/certificate.route.js";
+import uploadRoutes from "../modules/upload/upload.route.js";
 
 const router = express.Router();
 
@@ -42,7 +43,9 @@ router.use("/quizzes", quizRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/saved-courses", savedCourseRoutes);
 router.use("/certificates", CertificateRoutes);
+router.use("/upload", uploadRoutes);
 
 export default router;
+
 
 

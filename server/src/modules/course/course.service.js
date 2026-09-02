@@ -1,9 +1,9 @@
-import path from "path";
-import fs from "fs";
 import Course from "./course.model.js";
 import ApiError from "../../shared/ApiError.js";
 import { COURSE_STATUS, COURSE_MESSAGES } from "./course.constant.js";
 import { USER_ROLE } from "../user/user.constant.js";
+import { uploadStreamToCloudinary } from "../../config/cloudinary.js";
+
 
 
 const toSlug = (str) =>
@@ -219,17 +219,16 @@ const softDeleteCourse = async (id) => {
 
 const uploadPoster = async (courseId, file) => {
   if (!file) throw new ApiError(400, "No image file provided.");
-  const posterUrl = `/uploads/courses/${file.filename}`;
+
+  const uploadResult = await uploadStreamToCloudinary(file.buffer, {
+    folder: "eduflow/courses",
+    resource_type: "image",
+  });
+  const posterUrl = uploadResult.url;
 
   if (courseId && courseId !== "new") {
     const course = await Course.findOne({ _id: courseId, isDeleted: { $ne: true } });
     if (course) {
-      if (course.thumbnail && course.thumbnail.startsWith("/uploads/courses/")) {
-        const oldPath = path.join(process.cwd(), "public", course.thumbnail.replace(/^\//, ""));
-        if (fs.existsSync(oldPath)) {
-          try { fs.unlinkSync(oldPath); } catch {}
-        }
-      }
       course.thumbnail = posterUrl;
       course.banner = posterUrl;
       await course.save();
@@ -243,19 +242,13 @@ const deletePoster = async (courseId) => {
   const course = await Course.findOne({ _id: courseId, isDeleted: { $ne: true } });
   if (!course) throw new ApiError(404, COURSE_MESSAGES.COURSE_NOT_FOUND);
 
-  if (course.thumbnail && course.thumbnail.startsWith("/uploads/courses/")) {
-    const oldPath = path.join(process.cwd(), "public", course.thumbnail.replace(/^\//, ""));
-    if (fs.existsSync(oldPath)) {
-      try { fs.unlinkSync(oldPath); } catch {}
-    }
-  }
-
   course.thumbnail = "";
   course.banner = "";
   await course.save();
 
   return { message: "Poster deleted successfully." };
 };
+
 
 export const CourseService = {
   createCourse,

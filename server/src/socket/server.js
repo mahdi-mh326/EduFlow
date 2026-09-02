@@ -49,18 +49,31 @@ const canAccessClassroom = async (user, sessionId) => {
     return { error: "Live session not found", code: 404 };
   }
 
-  if (session.status !== LIVE_SESSION_STATUS.LIVE) {
-    return { error: "Classroom is not available for this session", code: 403 };
+  // Admin access (observer / monitor)
+  if (user.role === USER_ROLE.ADMIN) {
+    return { session, role: "admin" };
   }
 
+  // Teacher access: if scheduled, automatically transition to LIVE when teacher enters
   if (user.role === USER_ROLE.TEACHER) {
     if (session.teacherId.toString() !== user._id.toString()) {
       return { error: "You are not authorized to access this classroom", code: 403 };
     }
+    if (session.status === LIVE_SESSION_STATUS.SCHEDULED) {
+      session.status = LIVE_SESSION_STATUS.LIVE;
+      await session.save();
+    } else if (session.status !== LIVE_SESSION_STATUS.LIVE) {
+      return { error: "Classroom is not available for this session", code: 403 };
+    }
     return { session, role: "teacher" };
   }
 
+  // Student access
   if (user.role === USER_ROLE.STUDENT) {
+    if (session.status !== LIVE_SESSION_STATUS.LIVE) {
+      return { error: "Class has not started yet. Please wait for the teacher to begin.", code: 403 };
+    }
+
     const enrolled = await Enrollment.findOne({
       studentId: user._id,
       classId: session.classId,
@@ -78,6 +91,7 @@ const canAccessClassroom = async (user, sessionId) => {
 
   return { error: "You are not authorized to access this classroom", code: 403 };
 };
+
 
 export const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {

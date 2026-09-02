@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { Button, Badge, Skeleton, ErrorState, Container } from '@/components'
@@ -63,6 +63,7 @@ export function TeacherClassroom() {
   const [activeTab, setActiveTab] = useState<'chat' | 'participants'>('chat')
   const [showSidePanel, setShowSidePanel] = useState(true)
   const { user, accessToken } = useAuthStore()
+  const currentUserId = user?.id || (user as any)?._id || ''
 
   const {
     connectionState,
@@ -82,11 +83,11 @@ export function TeacherClassroom() {
     lowerParticipantHand,
     sendChatMessage,
   } = useClassroomSocket({
-
     sessionId: sessionId || '',
     accessToken: accessToken || undefined,
-    currentUserId: user?.id,
+    currentUserId,
     currentUserName: user?.fullName,
+
     onRoomJoined: () => {
       setJoinError(null)
       toast.success('Joined live classroom successfully!')
@@ -214,8 +215,19 @@ export function TeacherClassroom() {
 
   const connectionInfo = connectionStateConfig[connectionState]
 
-  const otherParticipants = participants.filter((p) => p.userId !== user?.id)
-  const raisedHands = participants.filter((p) => p.isHandRaised)
+  const otherParticipants = useMemo(() => {
+    const map = new Map<string, (typeof participants)[0]>()
+    for (const p of participants) {
+      if (p.userId && p.userId !== currentUserId) {
+        map.set(p.userId, p)
+      }
+    }
+    return Array.from(map.values())
+  }, [participants, currentUserId])
+
+  const raisedHands = useMemo(() => {
+    return participants.filter((p) => p.isHandRaised && p.userId !== currentUserId)
+  }, [participants, currentUserId])
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background flex flex-col">
@@ -486,7 +498,7 @@ export function TeacherClassroom() {
               <ClassroomChat
                 messages={chatMessages}
                 onSendMessage={sendChatMessage}
-                currentUserId={user?.id}
+                currentUserId={currentUserId}
               />
             ) : (
               <div className="flex-1 rounded-2xl border border-border bg-surface p-4 shadow-sm overflow-y-auto max-h-[500px]">
@@ -505,7 +517,7 @@ export function TeacherClassroom() {
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-xs font-medium text-text">
-                            {p.displayName} {p.userId === user?.id ? '(You)' : ''}
+                            {p.displayName} {p.userId === currentUserId ? '(You)' : ''}
                           </p>
                           <span className="text-[10px] text-text-muted capitalize">{p.role}</span>
                         </div>

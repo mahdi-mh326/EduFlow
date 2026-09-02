@@ -143,13 +143,13 @@ export function AssignmentDetails() {
     }
   }, [assignment, loadSubmission])
 
-  const handleSubmit = async (content: string) => {
+  const handleSubmit = async (payload: { content: string; attachmentUrl?: string }) => {
     if (!assignmentId || submitting) return
     setSubmitting(true)
     setSubmissionError(null)
 
     try {
-      const result = await submissionApi.createSubmission(assignmentId, { content })
+      const result = await submissionApi.createSubmission(assignmentId, payload)
       setSubmission(result)
       setEditing(false)
       toast.success('Assignment submitted successfully!')
@@ -162,6 +162,7 @@ export function AssignmentDetails() {
       setSubmitting(false)
     }
   }
+
 
   const handleEdit = () => {
     setEditing(true)
@@ -419,10 +420,13 @@ export function AssignmentDetails() {
               </div>
               <SubmissionForm
                 onSubmit={handleSubmit}
+                initialContent={submission.content}
+                initialAttachmentUrl={submission.attachmentUrl}
                 submitting={submitting}
                 submitLabel="Update Submission"
-                helperText="Update your answer and submit again."
+                helperText="Update your answer or replace your attached file."
               />
+
             </div>
           )}
 

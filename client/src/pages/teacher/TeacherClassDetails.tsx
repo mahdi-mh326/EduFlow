@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
   Button,
@@ -11,7 +11,9 @@ import {
   Input,
   TextArea,
   Select,
+  FileUploadDropzone,
 } from '@/components'
+
 import { teacherApi } from '@/services/api/teacher'
 import { getAvatarUrl } from '@/utils'
 import { TeacherAssignmentForm } from './TeacherAssignmentForm'
@@ -76,6 +78,7 @@ function getStatusVariant(status?: string): 'default' | 'primary' | 'success' | 
 
 export function TeacherClassDetails() {
   const { classId } = useParams<{ classId: string }>()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<ClassTab>('live')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -195,6 +198,9 @@ export function TeacherClassDetails() {
       const session = await teacherApi.startClassLive(classId)
       setActiveLiveSession(session)
       toast.success('Live class started successfully!')
+      if (session?._id) {
+        navigate(`/teacher/live-classes/${session._id}/classroom`)
+      }
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Failed to start live class.'
       toast.error(msg)
@@ -202,6 +208,7 @@ export function TeacherClassDetails() {
       setStartingLive(false)
     }
   }
+
 
   const handleEndLiveClass = async () => {
     if (!classId) return
@@ -449,16 +456,13 @@ export function TeacherClassDetails() {
               <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {activeLiveSession ? (
                   <>
-                    <a
-                      href={activeLiveSession.meetingUrl || `https://meet.jit.si/${activeLiveSession.meetingRoom}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <Link to={`/teacher/live-classes/${activeLiveSession._id}/classroom`}>
                       <Button variant="primary" className="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
                         <MonitorIcon className="h-4 w-4" />
-                        Join Live Meeting Window
+                        Enter Live Classroom
                       </Button>
-                    </a>
+                    </Link>
+
                     <Button
                       variant="outline"
                       className="w-full sm:w-auto text-error border-error/30 hover:bg-error/10"
@@ -963,12 +967,33 @@ export function TeacherClassDetails() {
             onChange={(e) => setMaterialForm({ ...materialForm, description: e.target.value })}
             placeholder="Brief details about this material"
           />
-          <Input
-            label="File or Resource URL"
-            value={materialForm.fileUrl}
-            onChange={(e) => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
-            placeholder="https://... or link to document"
-          />
+          <div className="space-y-2">
+            <FileUploadDropzone
+              label="Upload Material File (Drag & Drop)"
+              hint="Directly upload PDF, Slides, Docs, Images, or Zip up to 25MB"
+              folder="eduflow/materials"
+              value={materialForm.fileUrl}
+              onChange={(url, detectedType) =>
+                setMaterialForm({
+                  ...materialForm,
+                  fileUrl: url,
+                  ...(detectedType ? { fileType: detectedType } : {}),
+                })
+              }
+              onRemove={() => setMaterialForm({ ...materialForm, fileUrl: '' })}
+            />
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">
+                Or Enter File / Resource URL
+              </label>
+              <Input
+                value={materialForm.fileUrl}
+                onChange={(e) => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
+                placeholder="https://... or link to document"
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" type="button" onClick={() => setOpenMaterialModal(false)}>
               Cancel

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { Button, Badge, Skeleton, EmptyState, ErrorState, Container } from '@/components'
 import { adminApi } from '@/services/api/admin'
@@ -267,8 +268,8 @@ export function AdminLiveSessions() {
         <div className="space-y-4">
           {filteredSessions.map((session) => {
             const isLive = session.status === 'live'
-            const meetingUrl = session.meetingUrl || `https://meet.jit.si/${session.meetingRoom}`
             const teacher = session.teacherId
+
 
             return (
               <div
@@ -334,7 +335,7 @@ export function AdminLiveSessions() {
                 <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border">
                   {isLive && (
                     <>
-                      <a href={meetingUrl} target="_blank" rel="noreferrer">
+                      <Link to={`/teacher/live-classes/${session._id}/classroom`}>
                         <Button
                           variant="primary"
                           size="sm"
@@ -343,7 +344,8 @@ export function AdminLiveSessions() {
                           <MonitorIcon className="h-4 w-4" />
                           Join & Visit Class ↗
                         </Button>
-                      </a>
+                      </Link>
+
                       <Button
                         variant="outline"
                         size="sm"

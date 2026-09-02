@@ -16,8 +16,12 @@ const getMe = async (userId) => {
     }
   }
 
+  user.id = user._id.toString();
+
   return user;
 };
+
+
 
 
 const updateProfile = async (userId, payload) => {

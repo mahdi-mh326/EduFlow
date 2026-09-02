@@ -66,7 +66,7 @@ export function TeacherClasses() {
       const result = await teacherApi.getClasses({
         page,
         limit: 10,
-        teacherId: user?.id,
+        teacherId: user?.id || (user as any)?._id,
         ...(statusFilter ? { status: statusFilter } : {}),
       })
       setClasses(result.data || [])
