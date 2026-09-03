@@ -194,8 +194,8 @@ export function StudentClassDetails() {
     }
   }
 
-  const activeLiveSession = liveSessions.find((s) => s.status === 'live')
-  const isClassLive = Boolean(activeLiveSession)
+  const activeLiveSession = liveSessions.find((s) => s.status === 'live') || liveSessions[0] || null
+  const isClassLive = activeLiveSession?.status === 'live'
   const teacher = (cls as any)?.teacherId
 
   if (loading) {
@@ -390,14 +390,18 @@ export function StudentClassDetails() {
           </div>
 
           <div className="shrink-0">
-            {isClassLive && activeLiveSession ? (
+            {activeLiveSession ? (
               <Link to={`/student/classes/${activeLiveSession._id}/classroom`}>
                 <Button
                   variant="primary"
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 font-bold px-6 py-2.5"
+                  className={`gap-2 font-bold px-6 py-2.5 ${
+                    isClassLive
+                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20'
+                      : ''
+                  }`}
                 >
                   <MonitorIcon className="h-5 w-5" />
-                  Join Live Class Now ↗
+                  {isClassLive ? 'Join Live Class Now ↗' : 'Enter Classroom ↗'}
                 </Button>
               </Link>
             ) : (
@@ -407,6 +411,7 @@ export function StudentClassDetails() {
               </Button>
             )}
           </div>
+
         </div>
       </div>
 
@@ -480,16 +485,21 @@ export function StudentClassDetails() {
 
               <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm space-y-4">
                 <h3 className="text-base font-bold text-text">Live Classroom Status</h3>
-                {isClassLive && activeLiveSession ? (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center space-y-3">
-                    <div className="h-3 w-3 rounded-full bg-emerald-500 mx-auto animate-ping"></div>
-                    <p className="text-sm font-bold text-emerald-700">Live Session in Progress</p>
+                {activeLiveSession ? (
+                  <div className={`rounded-xl border p-5 text-center space-y-3 ${isClassLive ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-border bg-background'}`}>
+                    {isClassLive && <div className="h-3 w-3 rounded-full bg-emerald-500 mx-auto animate-ping"></div>}
+                    <p className={`text-sm font-bold ${isClassLive ? 'text-emerald-700' : 'text-text'}`}>
+                      {isClassLive ? 'Live Session in Progress' : 'Classroom Available'}
+                    </p>
                     <p className="text-xs text-text-muted">
-                      Your teacher started the live class: <span className="font-semibold text-text">{activeLiveSession.title}</span>
+                      {isClassLive
+                        ? `Your teacher started the live class: ${activeLiveSession.title}`
+                        : `Click below to enter the classroom for: ${activeLiveSession.title}`
+                      }
                     </p>
                     <Link to={`/student/classes/${activeLiveSession._id}/classroom`}>
-                      <Button variant="primary" className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold">
-                        Join Class Meeting
+                      <Button variant="primary" className={`w-full font-bold ${isClassLive ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}>
+                        {isClassLive ? 'Join Class Meeting' : 'Enter Classroom'}
                       </Button>
                     </Link>
                   </div>
@@ -498,7 +508,7 @@ export function StudentClassDetails() {
                     <ClockIcon className="h-8 w-8 text-text-muted mx-auto" />
                     <p className="text-sm font-semibold text-text">No Live Session Active</p>
                     <p className="text-xs text-text-muted">
-                      The class will turn live once your teacher clicks "Start Live Class".
+                      The class will turn live once your teacher clicks &quot;Start Live Class&quot;.
                     </p>
                   </div>
                 )}
@@ -506,6 +516,7 @@ export function StudentClassDetails() {
             </div>
           </div>
         )}
+
 
         {/* Tab 2: Assignments */}
         {activeTab === 'assignments' && (

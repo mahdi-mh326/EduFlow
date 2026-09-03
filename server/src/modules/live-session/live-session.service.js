@@ -147,7 +147,6 @@ const getLiveSessions = async (userId, userRole) => {
     const enrolledClassIds = await Enrollment.find({
       studentId: userId,
       status: ENROLLMENT_STATUS.ACTIVE,
-      paymentStatus: ENROLLMENT_PAYMENT_STATUS.PAID,
       isDeleted: { $ne: true },
     }).distinct("classId");
 
@@ -166,6 +165,7 @@ const getLiveSessions = async (userId, userRole) => {
 
   return sessions;
 };
+
 
 const getLiveSessionById = async (id, userId, userRole) => {
   const session = await LiveSession.findOne({
@@ -318,16 +318,16 @@ const getStudentLiveSessions = async (studentId) => {
       { classId: { $in: enrolledClassIds } },
       { courseId: { $in: enrolledCourseIds } },
     ],
-    status: { $in: [LIVE_SESSION_STATUS.SCHEDULED, LIVE_SESSION_STATUS.LIVE] },
     isDeleted: { $ne: true },
   })
     .populate("courseId", "title slug")
     .populate("classId", "batchName startDate endDate")
     .populate("teacherId", "fullName email")
-    .sort({ scheduledDate: 1, startTime: 1 });
+    .sort({ scheduledDate: -1, startTime: 1 });
 
   return sessions;
 };
+
 
 
 const startLiveSession = async (id, userId) => {
@@ -340,25 +340,34 @@ const startLiveSession = async (id, userId) => {
     throw new ApiError(404, LIVE_SESSION_MESSAGES.SESSION_NOT_FOUND);
   }
 
-  if (session.teacherId.toString() !== userId.toString()) {
-    throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+  // Allow the assigned session teacher OR the class teacher to start
+  const isSessionTeacher = session.teacherId.toString() === userId.toString();
+  if (!isSessionTeacher) {
+    const cls = session.classId
+      ? await Class.findById(session.classId)
+      : null;
+    const isClassTeacher = cls && cls.teacherId.toString() === userId.toString();
+    if (!isClassTeacher) {
+      throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
   }
 
-  if (session.status !== LIVE_SESSION_STATUS.SCHEDULED) {
-    throw new ApiError(400, LIVE_SESSION_MESSAGES.INVALID_SESSION_STATUS);
+  // Allow resuming from any status (scheduled, completed, cancelled)
+  // Only skip updating if already live
+  if (session.status !== LIVE_SESSION_STATUS.LIVE) {
+    await LiveSession.findByIdAndUpdate(id, {
+      $set: { status: LIVE_SESSION_STATUS.LIVE },
+    });
   }
 
-  const updatedSession = await LiveSession.findByIdAndUpdate(
-    id,
-    { $set: { status: LIVE_SESSION_STATUS.LIVE } },
-    { new: true, runValidators: true }
-  )
+  const updatedSession = await LiveSession.findById(id)
     .populate("courseId", "title slug")
     .populate("classId", "batchName startDate endDate")
     .populate("teacherId", "fullName email");
 
   return updatedSession;
 };
+
 
 const endLiveSession = async (id, userId) => {
   const session = await LiveSession.findOne({
@@ -398,6 +407,7 @@ const startClassLive = async (classId, teacherId) => {
     throw new ApiError(403, LIVE_SESSION_MESSAGES.UNAUTHORIZED_TEACHER);
   }
 
+  // 1. Return already-live session if exists
   let session = await LiveSession.findOne({
     classId,
     teacherId,
@@ -412,10 +422,37 @@ const startClassLive = async (classId, teacherId) => {
     return session;
   }
 
+  // 2. Try to resume the most recent session (completed/cancelled/scheduled)
+  const existingSession = await LiveSession.findOne({
+    classId,
+    teacherId,
+    isDeleted: { $ne: true },
+  }).sort({ createdAt: -1 });
+
+  if (existingSession) {
+    existingSession.status = LIVE_SESSION_STATUS.LIVE;
+    await existingSession.save();
+
+    const populated = await LiveSession.findById(existingSession._id)
+      .populate("courseId", "title slug")
+      .populate("classId", "batchName startDate endDate")
+      .populate("teacherId", "fullName email");
+
+    return populated;
+  }
+
+  // 3. No existing session at all — create a brand new one with a unique meetingRoom
   const today = new Date();
   const startTime = cls.startTime || "10:00";
   const endTime = cls.endTime || "11:30";
-  const meetingRoom = generateMeetingRoom(cls.batchName, today);
+  const baseMeetingRoom = generateMeetingRoom(cls.batchName, today);
+
+  // Ensure uniqueness by appending a timestamp if needed
+  let meetingRoom = baseMeetingRoom;
+  const existing = await LiveSession.findOne({ meetingRoom });
+  if (existing) {
+    meetingRoom = `${baseMeetingRoom}-${Date.now()}`;
+  }
   const meetingUrl = `https://meet.jit.si/${meetingRoom}`;
 
   session = await LiveSession.create({
@@ -440,6 +477,7 @@ const startClassLive = async (classId, teacherId) => {
 
   return populated;
 };
+
 
 const endClassLive = async (classId, teacherId) => {
   const cls = await Class.findOne({ _id: classId, isDeleted: { $ne: true } });

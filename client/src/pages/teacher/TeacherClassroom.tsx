@@ -136,7 +136,7 @@ export function TeacherClassroom() {
 
 
   const handleStart = async () => {
-    if (!session || session.status !== 'scheduled') return
+    if (!session) return
     setStarting(true)
     try {
       await teacherApi.startLiveSession(session._id)
@@ -151,6 +151,7 @@ export function TeacherClassroom() {
       setStarting(false)
     }
   }
+
 
   const handleEnd = async () => {
     if (!session || session.status !== 'live') return
@@ -282,7 +283,7 @@ export function TeacherClassroom() {
               {connectionInfo.label}
             </span>
 
-            {session.status === 'scheduled' && (
+            {session.status !== 'live' && (
               <Button variant="primary" size="sm" onClick={handleStart} loading={starting}>
                 Start Live Session
               </Button>
@@ -294,6 +295,7 @@ export function TeacherClassroom() {
               </Button>
             )}
           </div>
+
         </div>
       </div>
 
@@ -340,13 +342,13 @@ export function TeacherClassroom() {
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                {session.status === 'scheduled' ? (
-                  <Button variant="primary" size="lg" onClick={handleStart} loading={starting}>
-                    Start & Join Class
-                  </Button>
-                ) : (
+                {session.status === 'live' ? (
                   <Button variant="primary" size="lg" onClick={handleJoin}>
                     Enter Live Class
+                  </Button>
+                ) : (
+                  <Button variant="primary" size="lg" onClick={handleStart} loading={starting}>
+                    Start & Join Class
                   </Button>
                 )}
               </div>

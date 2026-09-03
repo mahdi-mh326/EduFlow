@@ -270,15 +270,16 @@ export function Classroom() {
                   variant="primary"
                   size="lg"
                   onClick={handleJoin}
-                  disabled={session.status !== 'live' || connectionState === 'connecting' || connectionState === 'error'}
+                  disabled={connectionState === 'connecting'}
                 >
                   {connectionState === 'connecting'
                     ? 'Connecting...'
                     : session.status === 'live'
                       ? 'Join Live Class'
-                      : 'Class Not Started Yet'}
+                      : 'Join Class (Waiting for Teacher)'}
                 </Button>
               </div>
+
               {joinError && <p className="mt-4 text-xs text-error">{joinError}</p>}
             </div>
           ) : (
