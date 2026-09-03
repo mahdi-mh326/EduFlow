@@ -3,6 +3,7 @@ import type {
   AdminCourse,
   AdminClass,
   AdminTeacher,
+  AdminStudent,
   AdminEnrollment,
   AdminPayment,
   AdminCreateCoursePayload,
@@ -300,6 +301,26 @@ export const adminApi = {
 
   deleteAdmin: async (id: string): Promise<{ success: boolean; message: string }> => {
     const { data } = await apiClient.delete(`/admins/${id}`)
+    return data
+  },
+
+  getStudents: async (params?: { page?: number; limit?: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }): Promise<AdminListResponse<AdminStudent>> => {
+    const { data } = await apiClient.get('/students', { params })
+    return data
+  },
+
+  getStudentById: async (id: string): Promise<AdminDetailResponse<AdminStudent & { enrollments: any[]; totalEnrollments: number }>> => {
+    const { data } = await apiClient.get(`/students/${id}`)
+    return data
+  },
+
+  updateStudentStatus: async (id: string, status: 'active' | 'blocked' | 'pending'): Promise<{ success: boolean; data: any }> => {
+    const { data } = await apiClient.patch(`/students/${id}/status`, { status })
+    return data
+  },
+
+  getStudentsStats: async (): Promise<{ success: boolean; data: { totalStudents: number; activeStudents: number; pendingStudents: number; blockedStudents: number } }> => {
+    const { data } = await apiClient.get('/students/stats')
     return data
   },
 }

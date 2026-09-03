@@ -32,6 +32,7 @@ router.use("/admins", adminRoutes);
 router.use("/courses", courseRoutes);
 router.use("/classes", classRoutes);
 router.use("/enrollments", enrollmentRoutes);
+router.use("/students", studentRoutes);
 router.use("/student", studentRoutes);
 router.use("/materials", materialRoutes);
 router.use("/notices", noticeRoutes);

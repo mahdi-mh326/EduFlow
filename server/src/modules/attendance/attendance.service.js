@@ -85,20 +85,52 @@ const validateTeacherOwnership = async (classId, teacherId) => {
   return cls;
 };
 
+const recordLiveJoinAttendance = async ({
+  liveSessionId,
+  classId,
+  courseId,
+  teacherId,
+  studentId,
+}) => {
+  if (!liveSessionId || !studentId) return null;
+
+  // Check if attendance is already recorded for this live session and student
+  let attendance = await Attendance.findOne({
+    liveSessionId,
+    studentId,
+    isDeleted: { $ne: true },
+  });
+
+  if (attendance) {
+    if (!attendance.checkInTime) {
+      attendance.checkInTime = new Date();
+      await attendance.save();
+    }
+    return attendance;
+  }
+
+  // Create new presence record
+  attendance = await Attendance.create({
+    liveSessionId,
+    courseId,
+    classId,
+    teacherId,
+    studentId,
+    attendanceDate: new Date(),
+    status: ATTENDANCE_STATUS.PRESENT,
+    checkInTime: new Date(),
+    remarks: "Auto-recorded on live class join",
+    createdBy: teacherId,
+  });
+
+  return attendance;
+};
+
 const startAttendance = async (liveSessionId, teacherId) => {
   const session = await validateLiveSession(liveSessionId);
   await validateClass(session.classId);
   await validateCourse(session.courseId);
   await validateTeacherOwnership(session.classId, teacherId);
-
-  const existingAttendance = await Attendance.findOne({
-    liveSessionId,
-    isDeleted: { $ne: true },
-  });
-
-  if (existingAttendance) {
-    throw new ApiError(400, ATTENDANCE_MESSAGES.ATTENDANCE_ALREADY_SUBMITTED);
-  }
 
   const enrollments = await Enrollment.find({
     classId: session.classId,
@@ -109,12 +141,22 @@ const startAttendance = async (liveSessionId, teacherId) => {
     .populate("studentId", "fullName email phone")
     .sort({ enrolledAt: 1 });
 
-  const students = enrollments.map((enrollment) => ({
-    _id: enrollment.studentId._id,
-    fullName: enrollment.studentId.fullName,
-    email: enrollment.studentId.email,
-    phone: enrollment.studentId.phone,
-  }));
+  // Check existing attendance records (e.g. from live session join or prior submission)
+  const existingRecords = await Attendance.find({
+    liveSessionId,
+    isDeleted: { $ne: true },
+  });
+  const statusMap = new Map(existingRecords.map((r) => [r.studentId.toString(), r.status]));
+
+  const students = enrollments
+    .filter((e) => e.studentId && e.studentId._id)
+    .map((enrollment) => ({
+      _id: enrollment.studentId._id,
+      fullName: enrollment.studentId.fullName,
+      email: enrollment.studentId.email,
+      phone: enrollment.studentId.phone,
+      status: statusMap.get(enrollment.studentId._id.toString()) || ATTENDANCE_STATUS.PRESENT,
+    }));
 
   return {
     liveSession: {
@@ -129,6 +171,7 @@ const startAttendance = async (liveSessionId, teacherId) => {
     teacherId: session.teacherId,
     students,
     totalStudents: students.length,
+    hasExistingAttendance: existingRecords.length > 0,
   };
 };
 
@@ -137,15 +180,6 @@ const submitAttendance = async (liveSessionId, students, teacherId) => {
   await validateClass(session.classId);
   await validateCourse(session.courseId);
   await validateTeacherOwnership(session.classId, teacherId);
-
-  const existingAttendance = await Attendance.findOne({
-    liveSessionId,
-    isDeleted: { $ne: true },
-  });
-
-  if (existingAttendance) {
-    throw new ApiError(400, ATTENDANCE_MESSAGES.ATTENDANCE_ALREADY_SUBMITTED);
-  }
 
   const enrolledStudentIds = await Enrollment.find({
     classId: session.classId,
@@ -156,52 +190,41 @@ const submitAttendance = async (liveSessionId, students, teacherId) => {
 
   const sessionStudentIds = new Set(enrolledStudentIds.map((id) => id.toString()));
 
-  const dbSession = await mongoose.startSession();
-  try {
-    let createdAttendances = [];
-    await dbSession.withTransaction(async () => {
-      for (const student of students) {
-        if (!sessionStudentIds.has(student.studentId)) {
-          throw new ApiError(400, ATTENDANCE_MESSAGES.STUDENT_NOT_ENROLLED);
-        }
+  const createdOrUpdatedAttendances = [];
+  for (const student of students) {
+    if (!sessionStudentIds.has(student.studentId)) {
+      continue;
+    }
 
-        const existing = await Attendance.findOne({
-          liveSessionId,
-          studentId: student.studentId,
-          isDeleted: { $ne: true },
-        }).session(dbSession);
+    const checkInTime =
+      student.checkInTime || (student.status === ATTENDANCE_STATUS.PRESENT ? new Date() : null);
 
-        if (existing) {
-          throw new ApiError(400, ATTENDANCE_MESSAGES.DUPLICATE_ATTENDANCE);
-        }
+    const record = await Attendance.findOneAndUpdate(
+      { liveSessionId, studentId: student.studentId },
+      {
+        $set: {
+          status: student.status,
+          remarks: student.remarks || "",
+          checkInTime,
+          attendanceDate: new Date(),
+          isDeleted: false,
+        },
+        $setOnInsert: {
+          courseId: session.courseId,
+          classId: session.classId,
+          teacherId,
+          createdBy: teacherId,
+        },
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
 
-        const [attendance] = await Attendance.create(
-          [
-            {
-              liveSessionId,
-              courseId: session.courseId,
-              classId: session.classId,
-              teacherId,
-              studentId: student.studentId,
-              attendanceDate: new Date(),
-              status: student.status,
-              checkInTime: student.checkInTime || null,
-              remarks: student.remarks || "",
-              createdBy: teacherId,
-            },
-          ],
-          { session: dbSession }
-        );
-
-        createdAttendances.push(attendance);
-      }
-    });
-
-    return createdAttendances;
-  } finally {
-    await dbSession.endSession();
+    createdOrUpdatedAttendances.push(record);
   }
+
+  return createdOrUpdatedAttendances;
 };
+
 
 const updateAttendance = async (id, payload, teacherId) => {
   const attendance = await Attendance.findOne({
@@ -440,6 +463,7 @@ const getClassAttendanceHistory = async (classId, teacherId) => {
 };
 
 export const AttendanceService = {
+  recordLiveJoinAttendance,
   startAttendance,
   submitAttendance,
   updateAttendance,
@@ -449,4 +473,5 @@ export const AttendanceService = {
   submitClassAttendance,
   getClassAttendanceHistory,
 };
+
 

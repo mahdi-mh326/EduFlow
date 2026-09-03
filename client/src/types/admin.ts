@@ -84,8 +84,23 @@ export interface AdminTeacher {
   }
 }
 
+export interface AdminStudent {
+  _id: string
+  fullName: string
+  email: string
+  phone: string
+  gender?: 'male' | 'female' | 'other'
+  avatar?: string
+  role: 'student'
+  status: 'pending' | 'active' | 'blocked'
+  isVerified: boolean
+  enrollmentCount?: number
+  createdAt: string
+  updatedAt: string
+}
 
 export interface AdminEnrollment {
+
   _id: string
   studentId: {
     _id: string

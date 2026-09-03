@@ -16,10 +16,16 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [courses, setCourses] = useState<any[]>([])
-  const [classes, setClasses] = useState<any[]>([])
   const [teachers, setTeachers] = useState<any[]>([])
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
+  const [counts, setCounts] = useState({
+    students: 0,
+    courses: 0,
+    classes: 0,
+    teachers: 0,
+    enrollments: 0,
+  })
 
   const loadDashboard = async () => {
     setLoading(true)
@@ -31,6 +37,7 @@ export function AdminDashboard() {
         adminApi.getTeachers({ limit: 10 }),
         adminApi.getEnrollments({ limit: 10 }),
         adminApi.getPayments({ limit: 10 }),
+        adminApi.getStudents({ limit: 1 }),
       ])
 
       const coursesResult = results[0]
@@ -38,12 +45,10 @@ export function AdminDashboard() {
       const teachersResult = results[2]
       const enrollmentsResult = results[3]
       const paymentsResult = results[4]
+      const studentsResult = results[5]
 
       if (coursesResult.status === 'fulfilled') {
         setCourses(coursesResult.value.data || [])
-      }
-      if (classesResult.status === 'fulfilled') {
-        setClasses(classesResult.value.data || [])
       }
       if (teachersResult.status === 'fulfilled') {
         setTeachers(teachersResult.value.data || [])
@@ -54,6 +59,15 @@ export function AdminDashboard() {
       if (paymentsResult.status === 'fulfilled') {
         setPayments(paymentsResult.value.data || [])
       }
+
+      setCounts({
+        students: studentsResult.status === 'fulfilled' ? studentsResult.value.meta?.total ?? 0 : 0,
+        courses: coursesResult.status === 'fulfilled' ? coursesResult.value.meta?.total ?? coursesResult.value.data?.length ?? 0 : 0,
+        classes: classesResult.status === 'fulfilled' ? classesResult.value.meta?.total ?? classesResult.value.data?.length ?? 0 : 0,
+        teachers: teachersResult.status === 'fulfilled' ? teachersResult.value.meta?.total ?? teachersResult.value.data?.length ?? 0 : 0,
+        enrollments: enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.meta?.total ?? enrollmentsResult.value.data?.length ?? 0 : 0,
+      })
+
 
       const failed = results.filter((r) => r.status === 'rejected')
       if (failed.length === results.length) {
@@ -132,8 +146,8 @@ export function AdminDashboard() {
           <Skeleton variant="text" height="2rem" width="300px" className="mb-2" />
           <Skeleton variant="text" height="1rem" width="400px" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="rounded-xl border border-border bg-surface p-5">
               <Skeleton variant="text" height="1rem" width="120px" className="mb-3" />
               <Skeleton variant="text" height="2rem" width="80px" />
@@ -186,13 +200,15 @@ export function AdminDashboard() {
       </div>
 
       {/* Top Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-5 w-5 text-emerald-600" />} />
-        <StatCard label="Total Courses" value={courses.length.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} />
-        <StatCard label="Total Classes" value={classes.length.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} />
-        <StatCard label="Total Teachers" value={teachers.length.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} />
-        <StatCard label="Total Enrollments" value={enrollments.length.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} />
+        <StatCard label="Total Students" value={counts.students.toString()} icon={<UsersIcon className="h-5 w-5 text-indigo-500" />} />
+        <StatCard label="Total Courses" value={counts.courses.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} />
+        <StatCard label="Total Classes" value={counts.classes.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} />
+        <StatCard label="Total Teachers" value={counts.teachers.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} />
+        <StatCard label="Total Enrollments" value={counts.enrollments.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} />
       </div>
+
 
       {/* Visual Revenue & Enrollment Analytics */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-xs">

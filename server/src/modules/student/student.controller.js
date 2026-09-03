@@ -14,6 +14,56 @@ const getStudentDashboard = catchAsync(async (req, res) => {
   });
 });
 
+const getAllStudents = catchAsync(async (req, res) => {
+  const result = await StudentService.getAllStudents(req.query);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Students retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getStudentById = catchAsync(async (req, res) => {
+  const result = await StudentService.getStudentById(req.params.id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Student details retrieved successfully",
+    data: result,
+  });
+});
+
+const updateStudentStatus = catchAsync(async (req, res) => {
+  const result = await StudentService.updateStudentStatus(req.params.id, req.body.status);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Student status updated successfully",
+    data: result,
+  });
+});
+
+const getStudentsStats = catchAsync(async (req, res) => {
+  const result = await StudentService.getStudentsStats();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Students statistics retrieved successfully",
+    data: result,
+  });
+});
+
 export const StudentController = {
   getStudentDashboard,
+  getAllStudents,
+  getStudentById,
+  updateStudentStatus,
+  getStudentsStats,
 };
+

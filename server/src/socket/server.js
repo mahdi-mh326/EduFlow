@@ -12,6 +12,7 @@ import {
 } from "../modules/enrollment/enrollment.constant.js";
 import { LIVE_SESSION_STATUS } from "../modules/live-session/live-session.constant.js";
 import { classroom } from "./classroom.js";
+import { AttendanceService } from "../modules/attendance/attendance.service.js";
 import logger from "../shared/logger.js";
 
 const verifySocketToken = async (token) => {
@@ -177,6 +178,20 @@ export const initSocketServer = (httpServer) => {
           participant,
           participants: classroom.getParticipants(roomId),
         });
+
+        // Automatically record attendance for student when joining live classroom
+        if (role === "student" && session) {
+          AttendanceService.recordLiveJoinAttendance({
+            liveSessionId: session._id,
+            classId: session.classId,
+            courseId: session.courseId,
+            teacherId: session.teacherId,
+            studentId: user._id,
+          }).catch((err) => {
+            logger.error(`[AutoAttendance] Error recording attendance for student [${user._id}]: ${err.message}`);
+          });
+        }
+
 
         socket.on("offer", (payload) => {
           socket.to(roomId).emit("offer", {

@@ -29,4 +29,36 @@ router.get(
   AttendanceController.getStudentAttendance
 );
 
+/* =======================================
+   Admin Student Management Endpoints
+======================================= */
+router.get(
+  "/",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.getAllStudents
+);
+
+router.get(
+  "/stats",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.getStudentsStats
+);
+
+router.get(
+  "/:id",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.getStudentById
+);
+
+router.patch(
+  "/:id/status",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.updateStudentStatus
+);
+
 export default router;
+

@@ -6,7 +6,8 @@ const attendanceSchema = new mongoose.Schema(
     liveSessionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "LiveSession",
-      required: [true, "Live session is required"],
+      required: false,
+      default: null,
     },
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
