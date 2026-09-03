@@ -95,8 +95,23 @@ export function Classroom() {
     },
   })
 
+  const otherParticipants = useMemo(() => {
+
+    const map = new Map<string, (typeof participants)[0]>()
+    for (const p of participants) {
+      if (p.userId && p.userId !== currentUserId) {
+        map.set(p.userId, p)
+      }
+    }
+    return Array.from(map.values())
+  }, [participants, currentUserId])
+
+  const teacherParticipant = useMemo(() => {
+    return participants.find((p) => p.role === 'teacher' && p.userId !== currentUserId)
+  }, [participants, currentUserId])
 
   useEffect(() => {
+
     if (!sessionId) return
     setLoading(true)
     setError(null)
@@ -198,19 +213,6 @@ export function Classroom() {
   const isLive = session.status === 'live' || connectionState === 'connected'
   const connectionInfo = connectionStateConfig[connectionState] || connectionStateConfig.connecting
 
-  const otherParticipants = useMemo(() => {
-    const map = new Map<string, (typeof participants)[0]>()
-    for (const p of participants) {
-      if (p.userId && p.userId !== currentUserId) {
-        map.set(p.userId, p)
-      }
-    }
-    return Array.from(map.values())
-  }, [participants, currentUserId])
-
-  const teacherParticipant = useMemo(() => {
-    return participants.find((p) => p.role === 'teacher' && p.userId !== currentUserId)
-  }, [participants, currentUserId])
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background flex flex-col">
