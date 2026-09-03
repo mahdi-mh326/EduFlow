@@ -18,13 +18,14 @@ export function VideoTile({
   displayName,
   role = 'student',
   isLocal = false,
-  isVideoOn = true,
-  isAudioOn = true,
+  isVideoOn = false,
+  isAudioOn = false,
   isHandRaised = false,
   isScreenSharing = false,
   className = '',
 }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     if (videoRef.current) {
@@ -36,6 +37,20 @@ export function VideoTile({
     }
   }, [stream])
 
+  // Dedicated audio playback element for remote participants to ensure audio always plays even if camera is off
+  useEffect(() => {
+    if (!isLocal && audioRef.current) {
+      if (stream) {
+        audioRef.current.srcObject = stream
+        audioRef.current.play().catch((err) => {
+          console.warn('Audio auto-play prevented:', err)
+        })
+      } else {
+        audioRef.current.srcObject = null
+      }
+    }
+  }, [stream, isLocal])
+
   const safeName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : 'User'
   const initials = safeName
     .split(' ')
@@ -45,11 +60,13 @@ export function VideoTile({
     .slice(0, 2)
     .toUpperCase() || 'U'
 
-
   return (
     <div
       className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-slate-900 shadow-md transition-all ${className}`}
     >
+      {/* Hidden audio element for remote stream audio playback */}
+      {!isLocal && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
+
       {/* Video Element or Avatar Placeholder */}
       <div className="relative flex h-full w-full items-center justify-center">
         {stream && isVideoOn ? (
@@ -67,10 +84,11 @@ export function VideoTile({
             </div>
             <p className="mt-3 text-sm font-medium text-slate-200">{displayName}</p>
             <span className="text-xs text-slate-400">
-              {isVideoOn === false ? 'Camera is off' : 'Connecting video...'}
+              {isVideoOn ? 'Connecting video...' : 'Camera is off'}
             </span>
           </div>
         )}
+
 
         {/* Hand Raised Badge */}
         {isHandRaised && (

@@ -123,6 +123,8 @@ export function useClassroomSocket({
     isHandRaisedRef.current = isHandRaised
   }, [isVideoOn, isAudioOn, isScreenSharing, isHandRaised])
 
+  const pendingIceCandidates = useRef<Map<string, RTCIceCandidateInit[]>>(new Map())
+
   // Helper to create Peer Connection
   const createPeerConnection = useCallback((remoteUserId: string, socket: Socket) => {
     if (peerConnections.current.has(remoteUserId)) {
@@ -131,11 +133,24 @@ export function useClassroomSocket({
 
     const pc = new RTCPeerConnection(ICE_SERVERS)
 
-    // Add local tracks if available
+    // Add audio and video transceivers upfront so SDP offer/answer negotiate media sections immediately
+    try {
+      pc.addTransceiver('audio', { direction: 'sendrecv' })
+      pc.addTransceiver('video', { direction: 'sendrecv' })
+    } catch {
+      // Browser fallback
+    }
+
+    // Attach local tracks if available
     const activeStream = screenStreamRef.current || localStreamRef.current
     if (activeStream) {
       activeStream.getTracks().forEach((track) => {
-        pc.addTrack(track, activeStream)
+        const sender = pc.getSenders().find((s) => s.track?.kind === track.kind || (s as any).kind === track.kind)
+        if (sender) {
+          sender.replaceTrack(track).catch(() => {})
+        } else {
+          pc.addTrack(track, activeStream)
+        }
       })
     }
 
@@ -152,11 +167,21 @@ export function useClassroomSocket({
     // Remote Track handler
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
-        const stream = event.streams[0]
         setRemoteStreams((prev) => ({
           ...prev,
-          [remoteUserId]: stream,
+          [remoteUserId]: event.streams[0],
         }))
+      } else if (event.track) {
+        setRemoteStreams((prev) => {
+          const existing = prev[remoteUserId] || new MediaStream()
+          if (!existing.getTracks().some((t) => t.id === event.track.id)) {
+            existing.addTrack(event.track)
+          }
+          return {
+            ...prev,
+            [remoteUserId]: existing,
+          }
+        })
       }
     }
 
@@ -181,6 +206,7 @@ export function useClassroomSocket({
       pc.close()
       peerConnections.current.delete(remoteUserId)
     }
+    pendingIceCandidates.current.delete(remoteUserId)
     setRemoteStreams((prev) => {
       const next = { ...prev }
       delete next[remoteUserId]
@@ -281,6 +307,18 @@ export function useClassroomSocket({
       try {
         const pc = createPeerConnection(fromUserId, socket)
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+
+        // Flush any queued candidates
+        const queued = pendingIceCandidates.current.get(fromUserId) || []
+        for (const cand of queued) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(cand))
+          } catch (e) {
+            console.warn('Error applying queued ICE candidate:', e)
+          }
+        }
+        pendingIceCandidates.current.delete(fromUserId)
+
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
         socket.emit('answer', {
@@ -302,6 +340,17 @@ export function useClassroomSocket({
         const pc = peerConnections.current.get(fromUserId)
         if (pc && pc.signalingState !== 'stable') {
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+
+          // Flush any queued candidates
+          const queued = pendingIceCandidates.current.get(fromUserId) || []
+          for (const cand of queued) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(cand))
+            } catch (e) {
+              console.warn('Error applying queued ICE candidate:', e)
+            }
+          }
+          pendingIceCandidates.current.delete(fromUserId)
         }
       } catch (err) {
         console.error('Error handling answer from', fromUserId, err)
@@ -316,13 +365,18 @@ export function useClassroomSocket({
 
       try {
         const pc = peerConnections.current.get(fromUserId)
-        if (pc && payload.candidate) {
+        if (pc && pc.remoteDescription && pc.remoteDescription.type) {
           await pc.addIceCandidate(new RTCIceCandidate(payload.candidate))
+        } else {
+          const queue = pendingIceCandidates.current.get(fromUserId) || []
+          queue.push(payload.candidate)
+          pendingIceCandidates.current.set(fromUserId, queue)
         }
       } catch (err) {
         console.error('Error adding ICE candidate from', fromUserId, err)
       }
     })
+
 
     // Media status toggle updates from peers
     socket.on('media-toggle', (payload) => {
@@ -378,21 +432,10 @@ export function useClassroomSocket({
       return
     }
 
-    const startMediaAndEmitJoin = async (sock: Socket) => {
-      // Try starting local audio/video media
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        })
-        localStreamRef.current = stream
-        setLocalStream(stream)
-        setIsVideoOn(true)
-        setIsAudioOn(true)
-      } catch (mediaErr) {
-        console.warn('Could not auto-start camera/microphone, continuing without media:', mediaErr)
-      }
-
+    const emitJoin = (sock: Socket) => {
+      // Start with camera and microphone OFF by default for privacy and bandwidth
+      setIsVideoOn(false)
+      setIsAudioOn(false)
       sock.emit('join-room', sessionId)
     }
 
@@ -400,14 +443,13 @@ export function useClassroomSocket({
       setConnectionState('connecting')
       socket.connect()
       socket.once('connect', () => {
-        startMediaAndEmitJoin(socket)
+        emitJoin(socket)
       })
       return
     }
 
-    await startMediaAndEmitJoin(socket)
+    emitJoin(socket)
   }, [sessionId])
-
 
   // Leave Classroom Room
   const leaveRoom = useCallback(() => {
@@ -429,6 +471,7 @@ export function useClassroomSocket({
 
     peerConnections.current.forEach((pc) => pc.close())
     peerConnections.current.clear()
+    pendingIceCandidates.current.clear()
     setRemoteStreams({})
     setParticipants([])
     setHasJoined(false)
@@ -439,21 +482,30 @@ export function useClassroomSocket({
 
   // Toggle Video (Camera)
   const toggleVideo = useCallback(async () => {
-    if (!localStreamRef.current) {
+    const currentStream = localStreamRef.current
+    const existingVideoTrack = currentStream?.getVideoTracks()[0]
+
+    if (!existingVideoTrack) {
+      // Camera is off and no track exists: request camera permission & track
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: isAudioOnRef.current })
-        localStreamRef.current = stream
-        setLocalStream(stream)
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const newVideoTrack = videoStream.getVideoTracks()[0]
+
+        if (!localStreamRef.current) {
+          localStreamRef.current = videoStream
+        } else {
+          localStreamRef.current.addTrack(newVideoTrack)
+        }
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
         setIsVideoOn(true)
 
-        // Replace tracks in all peer connections
-        const videoTrack = stream.getVideoTracks()[0]
+        // Attach new video track to peer connections
         peerConnections.current.forEach((pc) => {
-          const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
-          if (sender && videoTrack) {
-            sender.replaceTrack(videoTrack)
-          } else if (videoTrack) {
-            pc.addTrack(videoTrack, stream)
+          const sender = pc.getSenders().find((s) => s.track?.kind === 'video' || (s as any).kind === 'video')
+          if (sender) {
+            sender.replaceTrack(newVideoTrack).catch(() => {})
+          } else {
+            pc.addTrack(newVideoTrack, localStreamRef.current!)
           }
         })
 
@@ -468,54 +520,51 @@ export function useClassroomSocket({
       return
     }
 
-    const videoTrack = localStreamRef.current.getVideoTracks()[0]
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled
-      const newState = videoTrack.enabled
-      setIsVideoOn(newState)
-      socketRef.current?.emit('media-toggle', {
-        isVideoOn: newState,
-        isAudioOn: isAudioOnRef.current,
-        isScreenSharing: isScreenSharingRef.current,
-      })
-    } else {
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({ video: true })
-        const newVideoTrack = newStream.getVideoTracks()[0]
-        localStreamRef.current.addTrack(newVideoTrack)
-        setIsVideoOn(true)
+    // Toggle existing track
+    existingVideoTrack.enabled = !existingVideoTrack.enabled
+    const newState = existingVideoTrack.enabled
+    setIsVideoOn(newState)
 
-        peerConnections.current.forEach((pc) => {
-          pc.addTrack(newVideoTrack, localStreamRef.current!)
-        })
-
-        socketRef.current?.emit('media-toggle', {
-          isVideoOn: true,
-          isAudioOn: isAudioOnRef.current,
-          isScreenSharing: isScreenSharingRef.current,
-        })
-      } catch (err: any) {
-        onErrorRef.current?.({ message: 'Unable to start video: ' + err.message })
+    peerConnections.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === 'video' || (s as any).kind === 'video')
+      if (sender) {
+        sender.replaceTrack(newState ? existingVideoTrack : null).catch(() => {})
       }
-    }
+    })
+
+    socketRef.current?.emit('media-toggle', {
+      isVideoOn: newState,
+      isAudioOn: isAudioOnRef.current,
+      isScreenSharing: isScreenSharingRef.current,
+    })
   }, [])
 
   // Toggle Audio (Microphone)
   const toggleAudio = useCallback(async () => {
-    if (!localStreamRef.current) {
+    const currentStream = localStreamRef.current
+    const existingAudioTrack = currentStream?.getAudioTracks()[0]
+
+    if (!existingAudioTrack) {
+      // Microphone is muted and no track exists: request mic permission & track
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoOnRef.current })
-        localStreamRef.current = stream
-        setLocalStream(stream)
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        const newAudioTrack = audioStream.getAudioTracks()[0]
+
+        if (!localStreamRef.current) {
+          localStreamRef.current = audioStream
+        } else {
+          localStreamRef.current.addTrack(newAudioTrack)
+        }
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
         setIsAudioOn(true)
 
-        const audioTrack = stream.getAudioTracks()[0]
+        // Attach new audio track to peer connections
         peerConnections.current.forEach((pc) => {
-          const sender = pc.getSenders().find((s) => s.track?.kind === 'audio')
-          if (sender && audioTrack) {
-            sender.replaceTrack(audioTrack)
-          } else if (audioTrack) {
-            pc.addTrack(audioTrack, stream)
+          const sender = pc.getSenders().find((s) => s.track?.kind === 'audio' || (s as any).kind === 'audio')
+          if (sender) {
+            sender.replaceTrack(newAudioTrack).catch(() => {})
+          } else {
+            pc.addTrack(newAudioTrack, localStreamRef.current!)
           }
         })
 
@@ -530,18 +579,25 @@ export function useClassroomSocket({
       return
     }
 
-    const audioTrack = localStreamRef.current.getAudioTracks()[0]
-    if (audioTrack) {
-      audioTrack.enabled = !audioTrack.enabled
-      const newState = audioTrack.enabled
-      setIsAudioOn(newState)
-      socketRef.current?.emit('media-toggle', {
-        isVideoOn: isVideoOnRef.current,
-        isAudioOn: newState,
-        isScreenSharing: isScreenSharingRef.current,
-      })
-    }
+    // Toggle existing audio track
+    existingAudioTrack.enabled = !existingAudioTrack.enabled
+    const newState = existingAudioTrack.enabled
+    setIsAudioOn(newState)
+
+    peerConnections.current.forEach((pc) => {
+      const sender = pc.getSenders().find((s) => s.track?.kind === 'audio' || (s as any).kind === 'audio')
+      if (sender) {
+        sender.replaceTrack(newState ? existingAudioTrack : null).catch(() => {})
+      }
+    })
+
+    socketRef.current?.emit('media-toggle', {
+      isVideoOn: isVideoOnRef.current,
+      isAudioOn: newState,
+      isScreenSharing: isScreenSharingRef.current,
+    })
   }, [])
+
 
   // Toggle Screen Sharing
   const toggleScreenShare = useCallback(async () => {
