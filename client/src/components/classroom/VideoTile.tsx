@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { Badge } from '@/components'
+
 
 interface VideoTileProps {
   stream?: MediaStream | null
@@ -27,21 +28,44 @@ export function VideoTile({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // Attach stream to video element via callback ref and effect to guarantee srcObject is assigned upon mounting
+  const attachVideo = useCallback(
+    (node: HTMLVideoElement | null) => {
+      videoRef.current = node
+      if (node) {
+        if (stream && isVideoOn) {
+          if (node.srcObject !== stream) {
+            node.srcObject = stream
+          }
+          node.play().catch(() => {})
+        } else {
+          node.srcObject = null
+        }
+      }
+    },
+    [stream, isVideoOn]
+  )
+
   useEffect(() => {
     if (videoRef.current) {
-      if (stream) {
-        videoRef.current.srcObject = stream
+      if (stream && isVideoOn) {
+        if (videoRef.current.srcObject !== stream) {
+          videoRef.current.srcObject = stream
+        }
+        videoRef.current.play().catch(() => {})
       } else {
         videoRef.current.srcObject = null
       }
     }
-  }, [stream])
+  }, [stream, isVideoOn])
 
-  // Dedicated audio playback element for remote participants to ensure audio always plays even if camera is off
+  // Dedicated audio playback element for remote participants to ensure speech is always heard
   useEffect(() => {
     if (!isLocal && audioRef.current) {
       if (stream) {
-        audioRef.current.srcObject = stream
+        if (audioRef.current.srcObject !== stream) {
+          audioRef.current.srcObject = stream
+        }
         audioRef.current.play().catch((err) => {
           console.warn('Audio auto-play prevented:', err)
         })
@@ -71,10 +95,10 @@ export function VideoTile({
       <div className="relative flex h-full w-full items-center justify-center">
         {stream && isVideoOn ? (
           <video
-            ref={videoRef}
+            ref={attachVideo}
             autoPlay
             playsInline
-            muted={isLocal}
+            muted={true}
             className={`h-full w-full object-cover ${isLocal && !isScreenSharing ? '-scale-x-100' : ''}`}
           />
         ) : (
@@ -88,6 +112,7 @@ export function VideoTile({
             </span>
           </div>
         )}
+
 
 
         {/* Hand Raised Badge */}
