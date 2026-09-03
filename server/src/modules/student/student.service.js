@@ -8,6 +8,10 @@ import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
 import { CLASS_STATUS } from "../class/class.constant.js";
 import { ENROLLMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import Notification from "../notification/notification.model.js";
+import { NOTIFICATION_TYPE } from "../notification/notification.constant.js";
+import sendEmail from "../../utils/email/sendEmail.js";
+import logger from "../../shared/logger.js";
 import { STUDENT_MESSAGES } from "./student.constant.js";
 
 const getStudentDashboard = async (studentId) => {
@@ -208,11 +212,98 @@ const getStudentsStats = async () => {
   };
 };
 
+const deleteStudent = async (studentId) => {
+  const student = await User.findOne({
+    _id: studentId,
+    role: USER_ROLE.STUDENT,
+    isDeleted: { $ne: true },
+  });
+
+  if (!student) {
+    throw new ApiError(404, "Student not found");
+  }
+
+  student.isDeleted = true;
+  student.deletedAt = new Date();
+  student.status = USER_STATUS.BLOCKED;
+  await student.save();
+
+  return { message: "Student account deleted successfully" };
+};
+
+const warnStudent = async (studentId, { title, message }, adminId) => {
+  const student = await User.findOne({
+    _id: studentId,
+    role: USER_ROLE.STUDENT,
+    isDeleted: { $ne: true },
+  });
+
+  if (!student) {
+    throw new ApiError(404, "Student not found");
+  }
+
+  if (!message || !message.trim()) {
+    throw new ApiError(400, "Warning message is required");
+  }
+
+  const warningTitle = title?.trim() || "Administrative Warning Notice";
+  const warningMessage = message.trim();
+
+  // Create In-App Notification
+  const notification = await Notification.create({
+    recipientId: student._id,
+    type: NOTIFICATION_TYPE.WARNING || "warning",
+    title: `⚠️ ${warningTitle}`,
+    message: warningMessage,
+    data: {
+      warnedAt: new Date(),
+      adminId,
+    },
+    createdBy: adminId,
+  });
+
+  // Attempt Email Notification
+  try {
+    await sendEmail({
+      to: student.email,
+      subject: `[EduFlow Notice] ${warningTitle}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <div style="background-color: #dc2626; color: #ffffff; padding: 20px; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px;">⚠️ Administrative Warning</h2>
+          </div>
+          <div style="padding: 24px; color: #1e293b;">
+            <p>Dear <strong>${student.fullName}</strong>,</p>
+            <p>You have received an official administrative warning from the EduFlow management team:</p>
+            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0; border-radius: 4px;">
+              <h4 style="margin: 0 0 8px 0; color: #991b1b;">${warningTitle}</h4>
+              <p style="margin: 0; color: #334155; line-height: 1.5;">${warningMessage}</p>
+            </div>
+            <p style="font-size: 13px; color: #64748b;">Please review this notice and take any necessary corrective actions. Continued violations may result in account restriction or suspension.</p>
+            <p style="margin-top: 24px; font-size: 13px; color: #64748b;">Best regards,<br/>EduFlow Administration</p>
+          </div>
+        </div>
+      `,
+    });
+  } catch (err) {
+    logger.error(`Failed to send warning email to [${student.email}]: ${err.message}`);
+  }
+
+  return {
+    success: true,
+    message: "Warning sent successfully to the student",
+    notification,
+  };
+};
+
 export const StudentService = {
   getStudentDashboard,
   getAllStudents,
   getStudentById,
   updateStudentStatus,
   getStudentsStats,
+  deleteStudent,
+  warnStudent,
 };
+
 

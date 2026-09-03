@@ -319,8 +319,13 @@ export const adminApi = {
     return data
   },
 
-  getStudentsStats: async (): Promise<{ success: boolean; data: { totalStudents: number; activeStudents: number; pendingStudents: number; blockedStudents: number } }> => {
-    const { data } = await apiClient.get('/students/stats')
+  deleteStudent: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.delete(`/students/${id}`)
+    return data
+  },
+
+  warnStudent: async (id: string, payload: { title?: string; message: string }): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.post(`/students/${id}/warn`, payload)
     return data
   },
 }

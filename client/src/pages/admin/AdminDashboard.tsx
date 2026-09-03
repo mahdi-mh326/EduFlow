@@ -201,12 +201,12 @@ export function AdminDashboard() {
 
       {/* Top Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-5 w-5 text-emerald-600" />} />
-        <StatCard label="Total Students" value={counts.students.toString()} icon={<UsersIcon className="h-5 w-5 text-indigo-500" />} />
-        <StatCard label="Total Courses" value={counts.courses.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} />
-        <StatCard label="Total Classes" value={counts.classes.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} />
-        <StatCard label="Total Teachers" value={counts.teachers.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} />
-        <StatCard label="Total Enrollments" value={counts.enrollments.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} />
+        <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-5 w-5 text-emerald-600" />} to="/admin/payments" />
+        <StatCard label="Total Students" value={counts.students.toString()} icon={<UsersIcon className="h-5 w-5 text-indigo-500" />} to="/admin/students" />
+        <StatCard label="Total Courses" value={counts.courses.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} to="/admin/courses" />
+        <StatCard label="Total Classes" value={counts.classes.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} to="/admin/classes" />
+        <StatCard label="Total Teachers" value={counts.teachers.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} to="/admin/teachers" />
+        <StatCard label="Total Enrollments" value={counts.enrollments.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} to="/admin/enrollments" />
       </div>
 
 
@@ -408,18 +408,30 @@ export function AdminDashboard() {
   )
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
-          {icon}
-        </div>
-        <div>
-          <p className="text-xs text-text-muted">{label}</p>
-          <p className="text-xl font-bold text-text">{value}</p>
-        </div>
+function StatCard({ label, value, icon, to }: { label: string; value: string; icon: React.ReactNode; to?: string }) {
+  const content = (
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
+        {icon}
       </div>
+      <div>
+        <p className="text-xs text-text-muted">{label}</p>
+        <p className="text-xl font-bold text-text">{value}</p>
+      </div>
+    </div>
+  )
+
+  if (to) {
+    return (
+      <Link to={to} className="rounded-xl border border-border bg-surface p-5 hover:border-primary/50 transition-colors block shadow-xs hover:shadow-sm">
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 shadow-xs">
+      {content}
     </div>
   )
 }

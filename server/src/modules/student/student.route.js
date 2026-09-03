@@ -60,5 +60,20 @@ router.patch(
   StudentController.updateStudentStatus
 );
 
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.deleteStudent
+);
+
+router.post(
+  "/:id/warn",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  StudentController.warnStudent
+);
+
 export default router;
+
 

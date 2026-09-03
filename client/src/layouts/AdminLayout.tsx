@@ -28,7 +28,7 @@ const routeTitleMap: Record<string, AdminPageTitle> = {
   '/admin/profile': 'Profile',
 }
 
-type IconName = 'home' | 'dashboard' | 'courses' | 'classes' | 'teachers' | 'live-classes' | 'attendance' | 'materials' | 'notices' | 'enrollments' | 'payments' | 'certificates' | 'admins' | 'profile'
+type IconName = 'home' | 'dashboard' | 'courses' | 'classes' | 'teachers' | 'students' | 'live-classes' | 'attendance' | 'materials' | 'notices' | 'enrollments' | 'payments' | 'certificates' | 'admins' | 'profile'
 
 type SidebarLink = {
   to: string
@@ -73,6 +73,14 @@ function SidebarIcon({ name, className }: { name: IconName; className?: string }
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    students: (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
@@ -155,6 +163,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { to: '/admin/courses', label: 'Manage Courses', icon: 'courses' },
     { to: '/admin/classes', label: 'Classes', icon: 'classes' },
     { to: '/admin/teachers', label: 'Teachers', icon: 'teachers' },
+    { to: '/admin/students', label: 'Students', icon: 'students' },
     { to: '/admin/live-sessions', label: 'Live Sessions', icon: 'live-classes' },
     { to: '/admin/attendance', label: 'Attendance', icon: 'attendance' },
     { to: '/admin/notices', label: 'Notices', icon: 'notices' },
