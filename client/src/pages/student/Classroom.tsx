@@ -15,18 +15,25 @@ import {
 } from '@/components/ui/icons'
 import type { StudentLiveSession } from '@/types/student'
 
-function formatTime(time: string) {
-
-  if (!time) return 'N/A'
-  const [hours, minutes] = time.split(':').map(Number)
+function formatTime(time?: string) {
+  if (!time || typeof time !== 'string') return 'N/A'
+  const parts = time.split(':')
+  if (parts.length < 2) return time
+  const [hours, minutes] = parts.map(Number)
+  if (isNaN(hours) || isNaN(minutes)) return time
   const period = hours >= 12 ? 'PM' : 'AM'
   const hour12 = hours % 12 || 12
-  return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`
+  return `${hour12}:${(minutes || 0).toString().padStart(2, '0')} ${period}`
 }
 
-function getDuration(startTime: string, endTime: string): string {
-  const [sh, sm] = startTime.split(':').map(Number)
-  const [eh, em] = endTime.split(':').map(Number)
+function getDuration(startTime?: string, endTime?: string): string {
+  if (!startTime || !endTime || typeof startTime !== 'string' || typeof endTime !== 'string') return 'N/A'
+  const sParts = startTime.split(':')
+  const eParts = endTime.split(':')
+  if (sParts.length < 2 || eParts.length < 2) return 'N/A'
+  const [sh, sm] = sParts.map(Number)
+  const [eh, em] = eParts.map(Number)
+  if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 'N/A'
   const start = sh * 60 + sm
   const end = eh * 60 + em
   const diff = Math.max(0, end - start)
@@ -43,6 +50,7 @@ const connectionStateConfig = {
   disconnected: { label: 'Disconnected', icon: <AlertCircleIcon className="h-4 w-4 text-error" />, color: 'text-error' },
   error: { label: 'Connection Error', icon: <AlertCircleIcon className="h-4 w-4 text-error" />, color: 'text-error' },
 }
+
 
 export function Classroom() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -188,7 +196,7 @@ export function Classroom() {
   const cls = session.classId
   const teacher = session.teacherId
   const isLive = session.status === 'live' || connectionState === 'connected'
-  const connectionInfo = connectionStateConfig[connectionState]
+  const connectionInfo = connectionStateConfig[connectionState] || connectionStateConfig.connecting
 
   const otherParticipants = useMemo(() => {
     const map = new Map<string, (typeof participants)[0]>()

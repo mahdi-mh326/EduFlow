@@ -36,14 +36,15 @@ export function VideoTile({
     }
   }, [stream])
 
-  const initials = displayName
-    ? displayName
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : 'U'
+  const safeName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : 'User'
+  const initials = safeName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'U'
+
 
   return (
     <div
