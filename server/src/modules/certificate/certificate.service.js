@@ -64,11 +64,27 @@ const calculateStudentProgress = async (studentId, classId) => {
   const totalItems = totalLive + totalAssignments + totalQuizzes;
   const completedItems = attendedLive + submittedAssignments + attemptedQuizzes;
 
-  const percentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 100;
+  // If totalItems is 0, progress is 0% (NOT 100%!)
+  const percentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0;
+
+  const isUpcoming = cls.status === "upcoming";
+  const isEligible = !isUpcoming && totalItems > 0 && completedItems > 0 && percentage >= 80;
+
+  let eligibilityMessage = "";
+  if (isUpcoming) {
+    eligibilityMessage = "This class has not started yet. Certificate can only be earned once coursework commences.";
+  } else if (totalItems === 0) {
+    eligibilityMessage = "Course tasks and live sessions have not been published for this class yet.";
+  } else if (completedItems === 0) {
+    eligibilityMessage = "You have not completed any sessions, assignments, or quizzes yet.";
+  } else if (percentage < 80) {
+    eligibilityMessage = `Course completion progress is currently ${percentage}%. You need at least 80% completion to claim your certificate.`;
+  }
 
   return {
     classId,
     courseId: cls.courseId,
+    classStatus: cls.status,
     totalItems,
     completedItems,
     percentage,
@@ -77,7 +93,8 @@ const calculateStudentProgress = async (studentId, classId) => {
       assignments: { submitted: submittedAssignments, total: totalAssignments },
       quizzes: { attempted: attemptedQuizzes, total: totalQuizzes },
     },
-    isEligibleForCertificate: percentage >= 80,
+    isEligibleForCertificate: isEligible,
+    eligibilityMessage,
   };
 };
 
@@ -89,7 +106,7 @@ const generateCertificate = async (studentId, classId) => {
     status: ENROLLMENT_STATUS.ACTIVE,
     paymentStatus: PAYMENT_STATUS.PAID,
     isDeleted: { $ne: true },
-  }).populate("courseId", "title slug category").populate("classId", "batchName");
+  }).populate("courseId", "title slug category").populate("classId", "batchName status");
 
   if (!enrollment) {
     throw new ApiError(403, "You are not actively enrolled in this class.");
@@ -103,20 +120,21 @@ const generateCertificate = async (studentId, classId) => {
   })
     .populate("studentId", "fullName email avatar")
     .populate("courseId", "title slug category thumbnail duration durationUnit")
-    .populate("classId", "batchName startDate endDate");
+    .populate("classId", "batchName startDate endDate status");
 
   if (certificate) {
     return certificate;
   }
 
-  // Calculate progress
+  // Calculate progress & verify eligibility
   const progress = await calculateStudentProgress(studentId, classId);
   if (!progress.isEligibleForCertificate) {
     throw new ApiError(
       400,
-      `Course completion progress is currently ${progress.percentage}%. You need at least 80% completion to claim your certificate.`
+      progress.eligibilityMessage || `Course completion progress is currently ${progress.percentage}%. You need at least 80% completion to claim your certificate.`
     );
   }
+
 
   // Assign grade based on progress
   let grade = "Pass";

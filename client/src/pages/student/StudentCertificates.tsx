@@ -126,23 +126,26 @@ export function StudentCertificates() {
             {certificates.map((cert) => (
               <div
                 key={cert._id}
-                className="relative flex flex-col justify-between rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-50/20 via-surface to-surface p-6 shadow-sm hover:shadow-md transition-all"
+                className="group relative flex flex-col justify-between rounded-3xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-500/5 via-surface to-surface p-6 shadow-sm hover:shadow-md hover:border-amber-500/60 transition-all duration-300 overflow-hidden"
               >
+                {/* Decorative Top Gold Line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
+
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                    <span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400 border border-amber-500/20">
                       ID: {cert.certificateNumber}
                     </span>
-                    <Badge variant="success" className="text-[10px]">
-                      {cert.grade} ({cert.completionPercentage}%)
+                    <Badge variant="success" className="text-[11px] font-bold">
+                      ★ {cert.grade} ({cert.completionPercentage}%)
                     </Badge>
                   </div>
 
-                  <h3 className="text-base font-bold text-text mb-1">
+                  <h3 className="text-base font-bold text-text mb-1.5 group-hover:text-amber-600 transition-colors">
                     {cert.courseId?.title}
                   </h3>
                   <p className="text-xs text-text-muted mb-4">
-                    Batch: {cert.classId?.batchName} • Issued {formatDate(cert.issueDate)}
+                    Batch: <span className="font-semibold text-text">{cert.classId?.batchName}</span> • Issued {formatDate(cert.issueDate)}
                   </p>
                 </div>
 
@@ -150,20 +153,21 @@ export function StudentCertificates() {
                   <button
                     type="button"
                     onClick={() => setSelectedCert(cert)}
-                    className="flex-1 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-all shadow-xs cursor-pointer text-center"
+                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3.5 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer text-center"
                   >
                     🎓 View & Print PDF
                   </button>
                   <Link
                     to={`/verify-certificate/${cert.certificateNumber}`}
-                    className="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold text-text hover:text-primary transition-colors text-center"
-                    title="Public verify"
+                    className="rounded-xl border border-border bg-surface hover:bg-background px-3 py-2.5 text-xs font-semibold text-text hover:text-primary transition-colors text-center"
+                    title="Public Verification"
                   >
                     🔗
                   </Link>
                 </div>
               </div>
             ))}
+
           </div>
         )}
       </div>

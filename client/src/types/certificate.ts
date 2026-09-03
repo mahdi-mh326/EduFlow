@@ -43,7 +43,10 @@ export interface ClassProgress {
     quizzes: { attempted: number; total: number }
   }
   isEligibleForCertificate: boolean
+  classStatus?: string
+  eligibilityMessage?: string
 }
+
 
 export interface CertificateVerificationResult {
   valid: boolean

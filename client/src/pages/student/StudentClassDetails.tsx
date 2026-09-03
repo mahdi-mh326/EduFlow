@@ -345,10 +345,17 @@ export function StudentClassDetails() {
               </Button>
             ) : (
               <div className="text-center sm:text-right">
-                <p className="text-xs font-semibold text-text-muted">Certificate Locked</p>
-                <p className="text-[11px] text-text-muted">Reach 80% to claim</p>
+                <p className="text-xs font-semibold text-text-muted flex items-center justify-center sm:justify-end gap-1">
+                  <span>🔒</span> Certificate Locked
+                </p>
+                <p className="text-[11px] text-text-muted mt-0.5">
+                  {progress?.totalItems === 0
+                    ? 'Available after coursework begins'
+                    : 'Reach 80% to claim'}
+                </p>
               </div>
             )}
+
           </div>
         </div>
       </div>
