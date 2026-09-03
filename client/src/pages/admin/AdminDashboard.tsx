@@ -200,13 +200,13 @@ export function AdminDashboard() {
       </div>
 
       {/* Top Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-5 w-5 text-emerald-600" />} to="/admin/payments" />
-        <StatCard label="Total Students" value={counts.students.toString()} icon={<UsersIcon className="h-5 w-5 text-indigo-500" />} to="/admin/students" />
-        <StatCard label="Total Courses" value={counts.courses.toString()} icon={<BookOpenIcon className="h-5 w-5 text-primary" />} to="/admin/courses" />
-        <StatCard label="Total Classes" value={counts.classes.toString()} icon={<GraduationCapIcon className="h-5 w-5 text-secondary" />} to="/admin/classes" />
-        <StatCard label="Total Teachers" value={counts.teachers.toString()} icon={<UsersIcon className="h-5 w-5 text-accent" />} to="/admin/teachers" />
-        <StatCard label="Total Enrollments" value={counts.enrollments.toString()} icon={<UsersIcon className="h-5 w-5 text-primary" />} to="/admin/enrollments" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <StatCard label="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={<TrendingUpIcon className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />} to="/admin/payments" />
+        <StatCard label="Total Students" value={counts.students.toString()} icon={<UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />} to="/admin/students" />
+        <StatCard label="Total Courses" value={counts.courses.toString()} icon={<BookOpenIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />} to="/admin/courses" />
+        <StatCard label="Total Classes" value={counts.classes.toString()} icon={<GraduationCapIcon className="h-4 w-4 sm:h-5 sm:w-5 text-secondary" />} to="/admin/classes" />
+        <StatCard label="Total Teachers" value={counts.teachers.toString()} icon={<UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />} to="/admin/teachers" />
+        <StatCard label="Total Enrollments" value={counts.enrollments.toString()} icon={<UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />} to="/admin/enrollments" />
       </div>
 
 
@@ -410,27 +410,27 @@ export function AdminDashboard() {
 
 function StatCard({ label, value, icon, to }: { label: string; value: string; icon: React.ReactNode; to?: string }) {
   const content = (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
+    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+      <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-background">
         {icon}
       </div>
-      <div>
-        <p className="text-xs text-text-muted">{label}</p>
-        <p className="text-xl font-bold text-text">{value}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] sm:text-xs text-text-muted truncate">{label}</p>
+        <p className="text-base sm:text-xl font-bold text-text truncate">{value}</p>
       </div>
     </div>
   )
 
   if (to) {
     return (
-      <Link to={to} className="rounded-xl border border-border bg-surface p-5 hover:border-primary/50 transition-colors block shadow-xs hover:shadow-sm">
+      <Link to={to} className="rounded-xl border border-border bg-surface p-3 sm:p-5 hover:border-primary/50 transition-colors block shadow-xs hover:shadow-sm">
         {content}
       </Link>
     )
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-xs">
+    <div className="rounded-xl border border-border bg-surface p-3 sm:p-5 shadow-xs">
       {content}
     </div>
   )
