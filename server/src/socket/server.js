@@ -247,6 +247,16 @@ export const initSocketServer = (httpServer) => {
           });
         });
 
+        socket.on("end-class", () => {
+          if (role === "teacher" || role === "admin") {
+            io.to(roomId).emit("class-ended", {
+              sessionId,
+              message: "The instructor has ended the live class.",
+            });
+            classroom.closeRoom(roomId);
+          }
+        });
+
         socket.on("leave-room", () => {
           classroom.leaveRoom(roomId, user._id.toString());
           socket.leave(roomId);

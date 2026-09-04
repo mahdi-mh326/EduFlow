@@ -30,6 +30,7 @@ export interface UseClassroomSocketOptions {
   currentUserId?: string
   currentUserName?: string
   onRoomJoined?: (payload: { roomId: string; sessionId: string; role: string; participants: Participant[] }) => void
+  onClassEnded?: (payload: { sessionId?: string; message?: string }) => void
   onError?: (error: { message: string; code?: string }) => void
 }
 
@@ -57,6 +58,7 @@ export function useClassroomSocket({
   accessToken,
   currentUserId,
   onRoomJoined,
+  onClassEnded,
   onError,
 }: UseClassroomSocketOptions) {
   // Derive effective user ID from options or JWT token payload to prevent undefined ID bugs
@@ -109,12 +111,14 @@ export function useClassroomSocket({
   const isHandRaisedRef = useRef(isHandRaised)
 
   const onRoomJoinedRef = useRef(onRoomJoined)
+  const onClassEndedRef = useRef(onClassEnded)
   const onErrorRef = useRef(onError)
 
   useEffect(() => {
     onRoomJoinedRef.current = onRoomJoined
+    onClassEndedRef.current = onClassEnded
     onErrorRef.current = onError
-  }, [onRoomJoined, onError])
+  }, [onRoomJoined, onClassEnded, onError])
 
   useEffect(() => {
     isVideoOnRef.current = isVideoOn
@@ -158,7 +162,7 @@ export function useClassroomSocket({
   }, [])
 
   // Helper to create Peer Connection
-  const createPeerConnection = useCallback((remoteUserId: string, socket: Socket, isInitiator = false) => {
+  const createPeerConnection = useCallback((remoteUserId: string, socket: Socket, _isInitiator = false) => {
     if (peerConnections.current.has(remoteUserId)) {
       return peerConnections.current.get(remoteUserId)!
     }
@@ -173,16 +177,14 @@ export function useClassroomSocket({
       })
     }
 
-    // Only if initiator and no tracks attached for that kind, add transceivers upfront so SDP has media sections
-    if (isInitiator) {
-      const hasAudio = pc.getSenders().some((s) => s.track?.kind === 'audio')
-      const hasVideo = pc.getSenders().some((s) => s.track?.kind === 'video')
-      if (!hasAudio) {
-        try { pc.addTransceiver('audio', { direction: 'sendrecv' }) } catch {}
-      }
-      if (!hasVideo) {
-        try { pc.addTransceiver('video', { direction: 'sendrecv' }) } catch {}
-      }
+    // Add transceivers upfront so SDP has media sections whether initiator or receiver
+    const hasAudio = pc.getSenders().some((s) => s.track?.kind === 'audio')
+    const hasVideo = pc.getSenders().some((s) => s.track?.kind === 'video')
+    if (!hasAudio) {
+      try { pc.addTransceiver('audio', { direction: 'sendrecv' }) } catch {}
+    }
+    if (!hasVideo) {
+      try { pc.addTransceiver('video', { direction: 'sendrecv' }) } catch {}
     }
 
     // ICE Candidate handler
@@ -443,6 +445,12 @@ export function useClassroomSocket({
       setChatMessages((prev) => [...prev, message])
     })
 
+    // Class ended by instructor
+    socket.on('class-ended', (payload: { sessionId?: string; message?: string }) => {
+      leaveRoom()
+      onClassEndedRef.current?.(payload)
+    })
+
     return () => {
       socket.disconnect()
       socketRef.current = null
@@ -526,7 +534,7 @@ export function useClassroomSocket({
   // Toggle Video (Camera)
   const toggleVideo = useCallback(async () => {
     const currentStream = localStreamRef.current
-    const existingVideoTrack = currentStream?.getVideoTracks()[0]
+    let existingVideoTrack = currentStream?.getVideoTracks()[0]
 
     if (!existingVideoTrack) {
       // Camera is off and no track exists: request camera permission & track
@@ -535,7 +543,7 @@ export function useClassroomSocket({
         const newVideoTrack = videoStream.getVideoTracks()[0]
 
         if (!localStreamRef.current) {
-          localStreamRef.current = videoStream
+          localStreamRef.current = new MediaStream([newVideoTrack])
         } else {
           localStreamRef.current.addTrack(newVideoTrack)
         }
@@ -544,7 +552,13 @@ export function useClassroomSocket({
 
         // Attach new video track to peer connections using reliable findSender
         peerConnections.current.forEach(async (pc, peerId) => {
-          const sender = findSender(pc, 'video')
+          let sender = findSender(pc, 'video')
+          if (!sender) {
+            const transceiver = pc.getTransceivers().find(t => t.receiver?.track?.kind === 'video' || t.mid?.includes('video'))
+            if (transceiver && !transceiver.sender.track) {
+              sender = transceiver.sender
+            }
+          }
           if (sender) {
             await sender.replaceTrack(newVideoTrack).catch(console.error)
           } else {
@@ -564,17 +578,10 @@ export function useClassroomSocket({
       return
     }
 
-    // Toggle existing track
+    // Toggle existing track cleanly using standard track.enabled
     existingVideoTrack.enabled = !existingVideoTrack.enabled
     const newState = existingVideoTrack.enabled
     setIsVideoOn(newState)
-
-    peerConnections.current.forEach(async (pc) => {
-      const sender = findSender(pc, 'video')
-      if (sender) {
-        await sender.replaceTrack(newState ? existingVideoTrack : null).catch(console.error)
-      }
-    })
 
     socketRef.current?.emit('media-toggle', {
       isVideoOn: newState,
@@ -586,7 +593,7 @@ export function useClassroomSocket({
   // Toggle Audio (Microphone)
   const toggleAudio = useCallback(async () => {
     const currentStream = localStreamRef.current
-    const existingAudioTrack = currentStream?.getAudioTracks()[0]
+    let existingAudioTrack = currentStream?.getAudioTracks()[0]
 
     if (!existingAudioTrack) {
       // Microphone is muted and no track exists: request mic permission & track
@@ -595,7 +602,7 @@ export function useClassroomSocket({
         const newAudioTrack = audioStream.getAudioTracks()[0]
 
         if (!localStreamRef.current) {
-          localStreamRef.current = audioStream
+          localStreamRef.current = new MediaStream([newAudioTrack])
         } else {
           localStreamRef.current.addTrack(newAudioTrack)
         }
@@ -604,7 +611,13 @@ export function useClassroomSocket({
 
         // Attach new audio track to peer connections using reliable findSender
         peerConnections.current.forEach(async (pc, peerId) => {
-          const sender = findSender(pc, 'audio')
+          let sender = findSender(pc, 'audio')
+          if (!sender) {
+            const transceiver = pc.getTransceivers().find(t => t.receiver?.track?.kind === 'audio' || t.mid?.includes('audio'))
+            if (transceiver && !transceiver.sender.track) {
+              sender = transceiver.sender
+            }
+          }
           if (sender) {
             await sender.replaceTrack(newAudioTrack).catch(console.error)
           } else {
@@ -624,17 +637,10 @@ export function useClassroomSocket({
       return
     }
 
-    // Toggle existing audio track
+    // Toggle existing audio track cleanly using standard track.enabled
     existingAudioTrack.enabled = !existingAudioTrack.enabled
     const newState = existingAudioTrack.enabled
     setIsAudioOn(newState)
-
-    peerConnections.current.forEach(async (pc) => {
-      const sender = findSender(pc, 'audio')
-      if (sender) {
-        await sender.replaceTrack(newState ? existingAudioTrack : null).catch(console.error)
-      }
-    })
 
     socketRef.current?.emit('media-toggle', {
       isVideoOn: isVideoOnRef.current,
@@ -738,6 +744,11 @@ export function useClassroomSocket({
     socketRef.current?.emit('chat-message', { text: text.trim() })
   }, [])
 
+  // End Class for all participants (Teacher / Admin)
+  const endClass = useCallback(() => {
+    socketRef.current?.emit('end-class')
+  }, [])
+
   return {
     connectionState,
     participants,
@@ -751,6 +762,7 @@ export function useClassroomSocket({
     hasJoined,
     joinRoom,
     leaveRoom,
+    endClass,
     toggleVideo,
     toggleAudio,
     toggleScreenShare,

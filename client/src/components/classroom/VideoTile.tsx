@@ -28,36 +28,28 @@ export function VideoTile({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Attach stream to video element via callback ref and effect to guarantee srcObject is assigned upon mounting
+  // Attach stream to video element via callback ref and effect to guarantee srcObject is assigned stably
   const attachVideo = useCallback(
     (node: HTMLVideoElement | null) => {
       videoRef.current = node
-      if (node) {
-        if (stream && isVideoOn) {
-          if (node.srcObject !== stream) {
-            node.srcObject = stream
-          }
-          node.play().catch(() => {})
-        } else {
-          node.srcObject = null
+      if (node && stream) {
+        if (node.srcObject !== stream) {
+          node.srcObject = stream
         }
+        node.play().catch(() => {})
       }
     },
-    [stream, isVideoOn]
+    [stream]
   )
 
   useEffect(() => {
-    if (videoRef.current) {
-      if (stream && isVideoOn) {
-        if (videoRef.current.srcObject !== stream) {
-          videoRef.current.srcObject = stream
-        }
-        videoRef.current.play().catch(() => {})
-      } else {
-        videoRef.current.srcObject = null
+    if (videoRef.current && stream) {
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream
       }
+      videoRef.current.play().catch(() => {})
     }
-  }, [stream, isVideoOn])
+  }, [stream])
 
   // Dedicated audio playback element for remote participants to ensure speech is always heard
   useEffect(() => {
@@ -88,28 +80,35 @@ export function VideoTile({
     <div
       className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-slate-900 shadow-md transition-all ${className}`}
     >
-      {/* Hidden audio element for remote stream audio playback */}
-      {!isLocal && <audio ref={audioRef} autoPlay playsInline className="hidden" />}
+      {/* Audio playback for remote stream (styled to prevent mobile browser suspension) */}
+      {!isLocal && (
+        <audio
+          ref={audioRef}
+          autoPlay
+          playsInline
+          style={{ position: 'absolute', width: 1, height: 1, opacity: 0.001, pointerEvents: 'none' }}
+        />
+      )}
 
       {/* Video Element or Avatar Placeholder */}
       <div className="relative flex h-full w-full items-center justify-center">
-        {stream && isVideoOn ? (
-          <video
-            ref={attachVideo}
-            autoPlay
-            playsInline
-            muted={true}
-            className={`h-full w-full object-cover ${isLocal && !isScreenSharing ? '-scale-x-100' : ''}`}
-          />
-        ) : (
+        <video
+          ref={attachVideo}
+          autoPlay
+          playsInline
+          muted={true}
+          className={`h-full w-full object-cover ${isLocal && !isScreenSharing ? '-scale-x-100' : ''} ${
+            stream && isVideoOn ? 'block' : 'hidden'
+          }`}
+        />
+
+        {(!stream || !isVideoOn) && (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary ring-4 ring-primary/10">
               {initials}
             </div>
             <p className="mt-3 text-sm font-medium text-slate-200">{displayName}</p>
-            <span className="text-xs text-slate-400">
-              {isVideoOn ? 'Connecting video...' : 'Camera is off'}
-            </span>
+            <span className="text-xs text-slate-400">Camera is off</span>
           </div>
         )}
 

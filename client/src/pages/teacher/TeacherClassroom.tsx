@@ -86,6 +86,7 @@ export function TeacherClassroom() {
     hasJoined,
     joinRoom,
     leaveRoom,
+    endClass,
     toggleVideo,
     toggleAudio,
     toggleScreenShare,
@@ -100,6 +101,10 @@ export function TeacherClassroom() {
     onRoomJoined: () => {
       setJoinError(null)
       toast.success('Joined live classroom successfully!')
+    },
+    onClassEnded: (payload) => {
+      toast.error(payload?.message || 'The live class has been ended.')
+      navigate(user?.role === 'admin' ? '/admin/live-sessions' : '/teacher/live-classes')
     },
     onError: (err) => {
       setJoinError(err.message || 'Classroom error.')
@@ -182,11 +187,12 @@ export function TeacherClassroom() {
     if (!confirm('Are you sure you want to end this live class for all students?')) return
     setEnding(true)
     try {
+      endClass()
       await teacherApi.endLiveSession(session._id)
       toast.success('Live session ended successfully.')
       setSession((prev) => (prev ? { ...prev, status: 'completed' } : null))
       leaveRoom()
-      navigate('/teacher/live-classes')
+      navigate(user?.role === 'admin' ? '/admin/live-sessions' : '/teacher/live-classes')
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to end live session.'
       toast.error(message)
@@ -519,7 +525,7 @@ export function TeacherClassroom() {
                   activeTab === 'participants' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text'
                 }`}
               >
-                Students ({participants.length})
+                Participants ({participants.length})
               </button>
             </div>
 

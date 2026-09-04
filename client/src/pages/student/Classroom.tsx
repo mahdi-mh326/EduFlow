@@ -89,6 +89,10 @@ export function Classroom() {
       setJoinError(null)
       toast.success('Joined live class successfully!')
     },
+    onClassEnded: (payload) => {
+      toast.error(payload?.message || 'The instructor has ended the live class.')
+      navigate('/student/classes')
+    },
     onError: (err) => {
       setJoinError(err.message || 'Failed to join classroom.')
       toast.error(err.message || 'Failed to join classroom.')
@@ -454,7 +458,7 @@ export function Classroom() {
                   activeTab === 'participants' ? 'bg-primary text-white shadow-xs' : 'text-text-muted hover:text-text'
                 }`}
               >
-                Classmates ({participants.length})
+                Participants ({participants.length})
               </button>
             </div>
 

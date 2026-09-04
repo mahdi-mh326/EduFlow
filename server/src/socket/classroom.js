@@ -66,9 +66,14 @@ const isInRoom = (roomId, userId) => {
   return room.participants.has(userId);
 };
 
+const closeRoom = (roomId) => {
+  rooms.delete(roomId);
+};
+
 export const classroom = {
   joinRoom,
   leaveRoom,
+  closeRoom,
   updateParticipantState,
   getParticipants,
   isInRoom,
