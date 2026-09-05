@@ -7,6 +7,9 @@ import {
   EditIcon,
   TrashIcon,
   InboxIcon,
+  UsersIcon,
+  CalendarIcon,
+  ClockIcon,
 } from '@/components/ui/icons'
 import type { AdminClass } from '@/types/admin'
 import { AdminClassForm } from './AdminClassForm'
@@ -197,18 +200,19 @@ export function AdminClasses() {
                     <span className="font-semibold text-text">{cls.courseId?.title || 'Untitled Course'}</span>
                     <span>•</span>
                     <span className="inline-flex items-center gap-1 text-primary font-medium">
-                      👨‍🏫 {cls.teacherId?.fullName || 'Unassigned Instructor'}
+                      <UsersIcon className="h-3.5 w-3.5" />
+                      <span>{cls.teacherId?.fullName || 'Unassigned Instructor'}</span>
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-1 text-xs text-text-muted bg-slate-100 rounded-lg px-2.5 py-1">
-                      <span>📅</span>
+                    <div className="inline-flex items-center gap-1.5 text-xs text-text-muted bg-slate-100 rounded-lg px-2.5 py-1">
+                      <CalendarIcon className="h-3.5 w-3.5" />
                       <span>
                         {cls.startDate ? new Date(cls.startDate).toLocaleDateString() : 'N/A'} - {cls.endDate ? new Date(cls.endDate).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
-                    <div className="inline-flex items-center gap-1 text-xs text-text-muted bg-slate-100 rounded-lg px-2.5 py-1">
-                      <span>⏰</span>
+                    <div className="inline-flex items-center gap-1.5 text-xs text-text-muted bg-slate-100 rounded-lg px-2.5 py-1">
+                      <ClockIcon className="h-3.5 w-3.5" />
                       <span>{cls.startTime} - {cls.endTime}</span>
                     </div>
                   </div>
@@ -237,7 +241,8 @@ export function AdminClasses() {
                       <div className="mt-3.5 max-w-sm rounded-xl border border-border bg-background/60 p-3">
                         <div className="flex items-center justify-between text-xs mb-1.5">
                           <span className="font-semibold text-text flex items-center gap-1.5">
-                            <span>👥 Seat Occupancy</span>
+                            <UsersIcon className="h-3.5 w-3.5 text-text-muted" />
+                            <span>Seat Occupancy</span>
                             {isFull ? (
                               <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
                                 Batch Full

@@ -7,6 +7,8 @@ import {
   SearchIcon,
   InboxIcon,
   CalendarIcon,
+  PinIcon,
+  PaperclipIcon,
 } from '@/components/ui/icons'
 import type { Notice } from '@/types/notice'
 
@@ -290,8 +292,9 @@ export function AdminNotices() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-semibold text-text">{item.title}</h3>
                     {item.isPinned && (
-                      <Badge variant="primary" className="text-[10px] font-bold">
-                        📌 Pinned
+                      <Badge variant="primary" className="text-[10px] font-bold inline-flex items-center gap-1">
+                        <PinIcon className="h-3 w-3" />
+                        <span>Pinned</span>
                       </Badge>
                     )}
                     <Badge variant={getPriorityBadgeVariant(item.priority)} className="capitalize text-[10px]">
@@ -305,7 +308,7 @@ export function AdminNotices() {
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-text-muted">
                     <span>
-                      Target:{' '}
+                       Target:{' '}
                       {item.courseId ? item.courseId.title : 'All Courses'}
                       {item.classId ? ` • ${item.classId.batchName}` : ''}
                     </span>
@@ -327,9 +330,10 @@ export function AdminNotices() {
                         href={item.attachmentUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                       >
-                        📎 View / Download Attachment ↗
+                        <PaperclipIcon className="h-3.5 w-3.5" />
+                        <span>View / Download Attachment ↗</span>
                       </a>
                     </div>
                   )}
@@ -485,8 +489,9 @@ export function AdminNotices() {
                   onChange={(e) => setFormData({ ...formData, isPinned: e.target.checked })}
                   className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
-                <label htmlFor="isPinned" className="text-xs font-medium text-text cursor-pointer">
-                  📌 Pin this notice to the top
+                <label htmlFor="isPinned" className="text-xs font-medium text-text cursor-pointer inline-flex items-center gap-1.5">
+                  <PinIcon className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Pin this notice to the top</span>
                 </label>
               </div>
 

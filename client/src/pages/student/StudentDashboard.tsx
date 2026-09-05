@@ -259,7 +259,7 @@ export function StudentDashboard() {
                       className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-center"
                     >
                       <div className="flex h-16 w-full shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary sm:w-24">
-                        <span className="text-2xl">💻</span>
+                        <MonitorIcon className="h-7 w-7 text-white" />
                       </div>
 
                       <div className="flex-1 min-w-0">

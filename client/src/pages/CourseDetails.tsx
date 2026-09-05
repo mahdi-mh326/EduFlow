@@ -8,7 +8,7 @@ import { savedCourseApi } from '@/services/api/savedCourse'
 
 import { useAuthStore } from '@/stores/auth.store'
 
-import { BookOpenIcon, CheckCircleIcon, ClockIcon, MonitorIcon, UsersIcon } from '@/components/ui/icons'
+import { BookOpenIcon, CheckCircleIcon, ClockIcon, MonitorIcon, UsersIcon, BookmarkIcon, CalendarIcon } from '@/components/ui/icons'
 import { formatCurrency, formatDate, getImageUrl } from '@/utils'
 import { toast } from 'react-hot-toast'
 
@@ -160,7 +160,19 @@ export function CourseDetails() {
             disabled={saveLoading}
             className="gap-2 font-bold"
           >
-            {saveLoading ? 'Processing...' : isSaved ? '✓ Course Saved (We\'ll Notify You)' : '🔖 Save Course & Notify Me'}
+            {saveLoading ? (
+              'Processing...'
+            ) : isSaved ? (
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircleIcon className="h-4 w-4 text-emerald-600" />
+                <span>Course Saved (We'll Notify You)</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <BookmarkIcon className="h-4 w-4" />
+                <span>Save Course & Notify Me</span>
+              </span>
+            )}
           </Button>
           <p className="text-center text-xs text-text-muted">
             No class batch scheduled yet. Save this course to receive an instant notification when enrollment opens.
@@ -239,7 +251,17 @@ export function CourseDetails() {
                       disabled={saveLoading}
                       className="gap-1.5"
                     >
-                      {isSaved ? '✓ Course Saved (We\'ll Notify You)' : '🔖 Save Course & Notify Me'}
+                      {isSaved ? (
+                        <span className="inline-flex items-center gap-1">
+                          <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>Course Saved</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <BookmarkIcon className="h-3.5 w-3.5" />
+                          <span>Save Course & Notify Me</span>
+                        </span>
+                      )}
                     </Button>
                   </div>
                 ) : (
@@ -250,8 +272,9 @@ export function CourseDetails() {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <h3 className="text-base font-bold text-text">{item.batchName}</h3>
-                            <p className="mt-1 text-xs font-medium text-primary">
-                              👨‍🏫 Instructor: {item.teacherId?.fullName || 'Assigned Instructor'}
+                            <p className="mt-1 text-xs font-medium text-primary inline-flex items-center gap-1">
+                              <UsersIcon className="h-3.5 w-3.5" />
+                              <span>Instructor: {item.teacherId?.fullName || 'Assigned Instructor'}</span>
                             </p>
                           </div>
                           <Badge variant={item.status === 'ongoing' ? 'success' : item.status === 'upcoming' ? 'primary' : 'neutral'} className="capitalize">
@@ -260,16 +283,25 @@ export function CourseDetails() {
                         </div>
                         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-text-muted">
                           <div className="rounded-lg bg-slate-50 border border-border/60 p-2.5">
-                            <span className="font-semibold text-text block mb-0.5">🗓️ Class Days</span>
-                            <span>{item.classDays?.join(', ') || 'Schedule TBD'}</span>
+                            <span className="font-semibold text-text inline-flex items-center gap-1.5 mb-1">
+                              <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                              <span>Class Days</span>
+                            </span>
+                            <span className="block">{item.classDays?.join(', ') || 'Schedule TBD'}</span>
                           </div>
                           <div className="rounded-lg bg-slate-50 border border-border/60 p-2.5">
-                            <span className="font-semibold text-text block mb-0.5">⏰ Class Timing</span>
-                            <span>{formatTime(item.startTime)} – {formatTime(item.endTime)}</span>
+                            <span className="font-semibold text-text inline-flex items-center gap-1.5 mb-1">
+                              <ClockIcon className="h-3.5 w-3.5 text-primary" />
+                              <span>Class Timing</span>
+                            </span>
+                            <span className="block">{formatTime(item.startTime)} – {formatTime(item.endTime)}</span>
                           </div>
                           <div className="rounded-lg bg-slate-50 border border-border/60 p-2.5 sm:col-span-2">
-                            <span className="font-semibold text-text block mb-0.5">📅 Batch Duration</span>
-                            <span>{formatDate(item.startDate)} to {formatDate(item.endDate)}</span>
+                            <span className="font-semibold text-text inline-flex items-center gap-1.5 mb-1">
+                              <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                              <span>Batch Duration</span>
+                            </span>
+                            <span className="block">{formatDate(item.startDate)} to {formatDate(item.endDate)}</span>
                           </div>
                         </div>
                       </div>

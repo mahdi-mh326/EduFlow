@@ -10,7 +10,7 @@ import { savedCourseApi, type SavedCourseItem } from '@/services/api/savedCourse
 import { certificateApi } from '@/services/api/certificate'
 import { CertificateModal } from '@/components/certificate/CertificateModal'
 import type { Certificate } from '@/types/certificate'
-import { BookOpenIcon, UsersIcon, ClockIcon, InboxIcon, FileTextIcon, ClipboardListIcon, AlertCircleIcon, BookmarkIcon } from '@/components/ui/icons'
+import { BookOpenIcon, UsersIcon, ClockIcon, InboxIcon, FileTextIcon, ClipboardListIcon, AlertCircleIcon, BookmarkIcon, AwardIcon } from '@/components/ui/icons'
 import { formatCurrency, getImageUrl } from '@/utils'
 import type { Enrollment } from '@/types/enrollment'
 import { toast } from 'react-hot-toast'
@@ -425,9 +425,10 @@ export function MyEnrollments() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setActiveCert(cert)}
-                                    className="border-amber-500/50 text-amber-700 bg-amber-50/50 hover:bg-amber-100 font-bold"
+                                    className="border-amber-500/50 text-amber-700 bg-amber-50/50 hover:bg-amber-100 font-bold inline-flex items-center gap-1.5"
                                   >
-                                    🎓 Certificate
+                                    <AwardIcon className="h-3.5 w-3.5 text-amber-600" />
+                                    <span>Certificate</span>
                                   </Button>
                                 )
                               }

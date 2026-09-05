@@ -12,6 +12,11 @@ import {
   AlertCircleIcon,
   SpinnerIcon,
   MessageSquareIcon,
+  HandIcon,
+  VideoCameraIcon,
+  VideoOffIcon,
+  MicIcon,
+  MicOffIcon,
 } from '@/components/ui/icons'
 
 import type { TeacherLiveSession } from '@/types/teacher'
@@ -320,7 +325,7 @@ export function TeacherClassroom() {
       {raisedHands.length > 0 && (
         <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-700 flex flex-wrap items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2">
-            <span className="text-base animate-bounce">✋</span>
+            <HandIcon className="h-4 w-4 text-amber-600 animate-bounce" />
             <span>
               <strong>{raisedHands.map((h) => h.displayName).join(', ')}</strong> raised {raisedHands.length > 1 ? 'their hands' : 'hand'} with a question!
             </span>
@@ -566,12 +571,28 @@ export function TeacherClassroom() {
                             className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-500/30 transition-colors cursor-pointer"
                             title="Click to lower hand"
                           >
-                            <span>✋</span>
+                            <HandIcon className="h-3 w-3" />
                             <span>Lower</span>
                           </button>
                         )}
-                        {p.isVideoOn ? <span title="Camera On">📹</span> : <span title="Camera Off">🚫</span>}
-                        {p.isAudioOn ? <span title="Mic On">🎙️</span> : <span title="Mic Muted">🔇</span>}
+                        {p.isVideoOn ? (
+                          <span title="Camera On" className="text-emerald-500">
+                            <VideoCameraIcon className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <span title="Camera Off" className="text-rose-500/70">
+                            <VideoOffIcon className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                        {p.isAudioOn ? (
+                          <span title="Mic On" className="text-emerald-500">
+                            <MicIcon className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <span title="Mic Muted" className="text-rose-500/70">
+                            <MicOffIcon className="h-3.5 w-3.5" />
+                          </span>
+                        )}
                       </div>
 
                     </div>

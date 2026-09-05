@@ -30,6 +30,7 @@ import {
   CheckCircleIcon,
   FileTextIcon,
   AlertCircleIcon,
+  PhoneIcon,
 } from '@/components/ui/icons'
 import type {
   TeacherClass,
@@ -429,7 +430,7 @@ export function TeacherClassDetails() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">📹</span>
+                  <MonitorIcon className="h-5 w-5 text-primary shrink-0" />
                   <h2 className="text-xl font-bold text-text">Direct Live Classroom</h2>
                 </div>
                 <p className="text-sm text-text-muted max-w-xl leading-relaxed">
@@ -965,7 +966,12 @@ export function TeacherClassDetails() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-text truncate">{s?.fullName || 'Student'}</p>
                       <p className="text-xs text-text-muted truncate">{s?.email || 'N/A'}</p>
-                      {s?.phone && <p className="text-[11px] text-text-muted truncate">📞 {s.phone}</p>}
+                      {s?.phone && (
+                        <p className="text-[11px] text-text-muted truncate inline-flex items-center gap-1">
+                          <PhoneIcon className="h-3 w-3 text-text-muted" />
+                          <span>{s.phone}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 )

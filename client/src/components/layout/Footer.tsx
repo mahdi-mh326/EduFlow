@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { type ReactNode } from 'react'
 import { Container } from './Container'
+import { LockIcon } from '@/components/ui/icons'
 
 type LinkGroup = {
   title: string
@@ -31,8 +32,8 @@ export function Footer({ brand, description }: FooterProps) {
 
               {/* Supported Payment Badges */}
               <div className="pt-2">
-                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">
-                  🔒 Secured by SSLCommerz
+                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <LockIcon className="h-3.5 w-3.5 text-emerald-600" /> Secured by SSLCommerz
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   {['bKash', 'Nagad', 'Rocket', 'Visa', 'Mastercard'].map((method) => (

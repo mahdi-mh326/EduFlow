@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { Button, Badge, Skeleton, ErrorState, EmptyState, Pagination, Modal, ConfirmDialog } from '@/components'
 import { adminApi } from '@/services/api/admin'
-import { UsersIcon, TrashIcon } from '@/components/ui/icons'
+import {
+  UsersIcon,
+  TrashIcon,
+  AlertTriangleIcon,
+  BanIcon,
+  CheckIcon,
+  CheckCircleIcon,
+} from '@/components/ui/icons'
 import type { AdminStudent } from '@/types/admin'
 import { getAvatarUrl } from '@/utils'
 
@@ -462,7 +469,8 @@ export function AdminStudents() {
                       onClick={() => handleOpenWarning(student)}
                       className="flex items-center justify-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 h-9 px-2 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 transition-colors w-full"
                     >
-                      <span>⚠️</span> Warn
+                      <AlertTriangleIcon className="h-3.5 w-3.5" />
+                      <span>Warn</span>
                     </button>
 
                     <button
@@ -475,7 +483,17 @@ export function AdminStudents() {
                           : 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
                       }`}
                     >
-                      {student.status === 'active' ? '🚫 Block' : '✓ Unblock'}
+                      {student.status === 'active' ? (
+                        <span className="inline-flex items-center gap-1">
+                          <BanIcon className="h-3.5 w-3.5" />
+                          <span>Block</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <CheckIcon className="h-3.5 w-3.5" />
+                          <span>Unblock</span>
+                        </span>
+                      )}
                     </button>
 
                     <button
@@ -514,7 +532,7 @@ export function AdminStudents() {
         {warnModalStudent && (
           <form onSubmit={handleSendWarning} className="space-y-4">
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 flex items-start gap-2.5">
-              <span className="text-base">⚠️</span>
+              <AlertTriangleIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-amber-800">Direct Official Warning</p>
                 <p className="mt-0.5 text-amber-700">
@@ -634,7 +652,19 @@ export function AdminStudents() {
               </div>
               <div>
                 <span className="text-text-muted block">Email Verified</span>
-                <span className="font-semibold text-text">{detailsStudent.isVerified ? '✅ Verified' : '⚠️ Pending'}</span>
+                <span className="font-semibold text-text">
+                  {detailsStudent.isVerified ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-600">
+                      <CheckCircleIcon className="h-3.5 w-3.5" />
+                      <span>Verified</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-amber-600">
+                      <AlertTriangleIcon className="h-3.5 w-3.5" />
+                      <span>Pending</span>
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
 

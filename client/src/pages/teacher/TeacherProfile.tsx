@@ -11,6 +11,7 @@ import {
   CalendarIcon,
   CameraIcon,
   BriefcaseIcon,
+  GraduationCapIcon,
 } from '@/components/ui/icons'
 
 export function TeacherProfile() {
@@ -273,7 +274,9 @@ export function TeacherProfile() {
         <div className="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">🎓</span>
+              <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700 shrink-0">
+                <GraduationCapIcon className="h-5 w-5" />
+              </span>
               <div>
                 <h3 className="text-sm font-bold text-indigo-950">Welcome to EduFlow Faculty!</h3>
                 <p className="text-xs text-indigo-800 mt-0.5">

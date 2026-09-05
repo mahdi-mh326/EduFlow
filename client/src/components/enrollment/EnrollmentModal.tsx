@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Modal, Button, Badge } from '@/components'
 import { enrollmentApi } from '@/services/api/enrollment'
 import { paymentApi } from '@/services/api/payment'
-import { BookOpenIcon, CheckCircleIcon } from '@/components/ui/icons'
+import { BookOpenIcon, CheckCircleIcon, AlertTriangleIcon } from '@/components/ui/icons'
 
 import type { ClassResponse } from '@/services/api/course'
 import { formatCurrency } from '@/utils'
@@ -346,7 +346,7 @@ export function EnrollmentModal({
       {step === 'error' && (
         <div className="space-y-6 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-error/10 text-error">
-            <span className="text-3xl">⚠️</span>
+            <AlertTriangleIcon className="h-8 w-8" />
           </div>
 
           <div>

@@ -2,6 +2,14 @@ import { useRef } from 'react'
 import { toast } from 'react-hot-toast'
 import type { Certificate } from '@/types/certificate'
 import { formatDate } from '@/utils'
+import {
+  GraduationCapIcon,
+  CopyIcon,
+  LinkIcon,
+  PrinterIcon,
+  XIcon,
+  StarIcon,
+} from '@/components/ui/icons'
 
 interface CertificateModalProps {
   certificate: Certificate
@@ -81,8 +89,8 @@ export function CertificateModal({ certificate, open, onClose }: CertificateModa
         {/* Top Actions Bar (Hidden in Print) */}
         <div className="certificate-no-print flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 text-lg">
-              🎓
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+              <GraduationCapIcon className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-text">Official Certificate of Achievement</h3>
@@ -97,21 +105,21 @@ export function CertificateModal({ certificate, open, onClose }: CertificateModa
               className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text hover:bg-background hover:text-primary transition-all cursor-pointer shadow-2xs"
               title="Copy unique Certificate ID"
             >
-              📋 Copy ID
+              <CopyIcon className="h-3.5 w-3.5" /> Copy ID
             </button>
             <button
               type="button"
               onClick={handleCopyLink}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text hover:bg-background hover:text-primary transition-all cursor-pointer shadow-2xs"
             >
-              🔗 Copy Link
+              <LinkIcon className="h-3.5 w-3.5" /> Copy Link
             </button>
             <button
               type="button"
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-1.5 text-xs font-bold text-white transition-all cursor-pointer shadow-sm"
             >
-              🖨️ Print / Download PDF
+              <PrinterIcon className="h-3.5 w-3.5" /> Print / Download PDF
             </button>
             <button
               type="button"
@@ -119,7 +127,7 @@ export function CertificateModal({ certificate, open, onClose }: CertificateModa
               className="h-8 w-8 rounded-xl text-text-muted hover:text-text hover:bg-background flex items-center justify-center cursor-pointer ml-1"
               aria-label="Close modal"
             >
-              ✕
+              <XIcon className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -222,7 +230,7 @@ export function CertificateModal({ certificate, open, onClose }: CertificateModa
                 <span>Category: <strong>{certificate.courseId?.category || 'Professional Studies'}</strong></span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 text-[#b45309] font-bold">
-                  ★ {isDistinction ? 'Graduated with Distinction' : isMerit ? 'Graduated with Merit' : 'Graduated with Honor'} ({certificate.completionPercentage}% Score)
+                  <StarIcon className="h-3.5 w-3.5 fill-current" /> {isDistinction ? 'Graduated with Distinction' : isMerit ? 'Graduated with Merit' : 'Graduated with Honor'} ({certificate.completionPercentage}% Score)
                 </span>
               </div>
             </div>
@@ -246,7 +254,11 @@ export function CertificateModal({ certificate, open, onClose }: CertificateModa
                   {/* Golden Medallion Badge */}
                   <div className="relative w-20 h-20 rounded-full border-4 border-[#c59b27] bg-gradient-to-br from-[#fbf5b7] via-[#d4af37] to-[#aa771c] p-1 shadow-lg flex items-center justify-center">
                     <div className="w-full h-full rounded-full border border-dashed border-[#735118]/80 flex flex-col items-center justify-center text-center p-1 bg-gradient-to-br from-[#d4af37] to-[#8c6214] text-white">
-                      <div className="text-[8px] tracking-wider text-amber-200">★ ★ ★</div>
+                      <div className="flex items-center justify-center gap-0.5 text-amber-200">
+                        <StarIcon className="h-2 w-2 fill-current" />
+                        <StarIcon className="h-2 w-2 fill-current" />
+                        <StarIcon className="h-2 w-2 fill-current" />
+                      </div>
                       <span className="text-[8px] font-black uppercase tracking-tighter leading-none mt-0.5">
                         EDUFLOW
                       </span>

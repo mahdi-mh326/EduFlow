@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Container, Button, Skeleton } from '@/components'
+import { AwardIcon, XCircleIcon } from '@/components/ui/icons'
 import { certificateApi } from '@/services/api/certificate'
 import type { CertificateVerificationResult } from '@/types/certificate'
 import { formatDate } from '@/utils'
@@ -44,8 +45,9 @@ export function VerifyCertificate() {
     <div className="min-h-[calc(100vh-16rem)] py-12 sm:py-16 bg-background">
       <Container>
         <div className="mx-auto max-w-2xl text-center mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-3">
-            🎓 EduFlow Credential Verification
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-3">
+            <AwardIcon className="h-4 w-4" />
+            <span>EduFlow Credential Verification</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-text">
             Verify Certificate Authenticity
@@ -143,7 +145,7 @@ export function VerifyCertificate() {
         {!loading && searched && error && (
           <div className="mx-auto max-w-xl rounded-2xl border border-error/30 bg-error/5 p-8 text-center shadow-sm">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-error/10 text-error">
-              ✕
+              <XCircleIcon className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-text">Invalid or Unverified Certificate</h3>
             <p className="mt-1 text-xs text-text-muted">{error}</p>

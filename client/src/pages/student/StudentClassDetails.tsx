@@ -24,6 +24,12 @@ import {
   FileTextIcon,
   AlertCircleIcon,
   ClipboardListIcon,
+  RadioIcon,
+  ClipboardCheckIcon,
+  TimerIcon,
+  AwardIcon,
+  LockIcon,
+  PaperclipIcon,
 } from '@/components/ui/icons'
 import { materialApi } from '@/services/api/material'
 import { certificateApi } from '@/services/api/certificate'
@@ -317,11 +323,20 @@ export function StudentClassDetails() {
 
             {/* Breakdown Pills */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted pt-1">
-              <span>📡 Live Classes: <strong>{progress?.breakdown.live.attended || 0}/{progress?.breakdown.live.total || 0}</strong></span>
+              <span className="inline-flex items-center gap-1">
+                <RadioIcon className="h-3.5 w-3.5 text-primary" />
+                <span>Live Classes: <strong>{progress?.breakdown.live.attended || 0}/{progress?.breakdown.live.total || 0}</strong></span>
+              </span>
               <span>•</span>
-              <span>📝 Assignments: <strong>{progress?.breakdown.assignments.submitted || 0}/{progress?.breakdown.assignments.total || 0}</strong></span>
+              <span className="inline-flex items-center gap-1">
+                <ClipboardCheckIcon className="h-3.5 w-3.5 text-indigo-500" />
+                <span>Assignments: <strong>{progress?.breakdown.assignments.submitted || 0}/{progress?.breakdown.assignments.total || 0}</strong></span>
+              </span>
               <span>•</span>
-              <span>⏱️ Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
+              <span className="inline-flex items-center gap-1">
+                <TimerIcon className="h-3.5 w-3.5 text-amber-500" />
+                <span>Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
+              </span>
             </div>
           </div>
 
@@ -333,20 +348,23 @@ export function StudentClassDetails() {
                 onClick={() => setShowCertModal(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-amber-600 hover:to-amber-700 transition-all cursor-pointer"
               >
-                🎓 View Certificate (ID: {certificate.certificateNumber.slice(-8)})
+                <AwardIcon className="h-4 w-4" />
+                <span>View Certificate (ID: {certificate.certificateNumber.slice(-8)})</span>
               </button>
             ) : progress?.isEligibleForCertificate ? (
               <Button
                 onClick={handleClaimCertificate}
                 loading={claimingCert}
-                className="bg-gradient-to-r from-primary to-emerald-600 text-white font-bold"
+                className="bg-gradient-to-r from-primary to-emerald-600 text-white font-bold inline-flex items-center gap-1.5"
               >
-                🎓 Claim Certificate
+                <AwardIcon className="h-4 w-4" />
+                <span>Claim Certificate</span>
               </Button>
             ) : (
               <div className="text-center sm:text-right">
-                <p className="text-xs font-semibold text-text-muted flex items-center justify-center sm:justify-end gap-1">
-                  <span>🔒</span> Certificate Locked
+                <p className="text-xs font-semibold text-text-muted flex items-center justify-center sm:justify-end gap-1.5">
+                  <LockIcon className="h-3.5 w-3.5 text-text-muted" />
+                  <span>Certificate Locked</span>
                 </p>
                 <p className="text-[11px] text-text-muted mt-0.5">
                   {progress?.totalItems === 0
@@ -730,7 +748,8 @@ export function StudentClassDetails() {
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                           >
-                            📎 View Attachment ↗
+                            <PaperclipIcon className="h-3.5 w-3.5" />
+                            <span>View Attachment ↗</span>
                           </a>
                         </div>
                       )}

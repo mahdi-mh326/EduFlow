@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { TextArea } from '@/components/ui/TextArea'
 import { Select } from '@/components/ui/Select'
 import { adminApi } from '@/services/api/admin'
+import { CheckCircleIcon } from '@/components/ui/icons'
 import { getImageUrl } from '@/utils'
 import type { AdminCourse, AdminCreateCoursePayload, AdminUpdateCoursePayload } from '@/types/admin'
 
@@ -316,7 +317,8 @@ export function AdminCourseForm({ open, onClose, onSuccess, course }: AdminCours
             <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Course Poster / Thumbnail</label>
             {posterPreview && (
               <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                ✓ Poster Attached
+                <CheckCircleIcon className="h-3.5 w-3.5" />
+                <span>Poster Attached</span>
               </span>
             )}
           </div>

@@ -6,6 +6,8 @@ import {
   SearchIcon,
   InboxIcon,
   CalendarIcon,
+  PinIcon,
+  PaperclipIcon,
 } from '@/components/ui/icons'
 import type { Notice } from '@/types/notice'
 
@@ -152,8 +154,9 @@ export function StudentNotices() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-text">{item.title}</h2>
                     {item.isPinned && (
-                      <Badge variant="primary" className="text-[10px] font-bold">
-                        📌 Pinned
+                      <Badge variant="primary" className="text-[10px] font-bold inline-flex items-center gap-1">
+                        <PinIcon className="h-3 w-3" />
+                        <span>Pinned</span>
                       </Badge>
                     )}
                     <Badge variant={getPriorityBadgeVariant(item.priority)} className="capitalize text-[10px]">
@@ -165,7 +168,10 @@ export function StudentNotices() {
                     {item.courseId?.title ? (
                       <span>{item.courseId.title} {item.classId?.batchName ? `• ${item.classId.batchName}` : ''}</span>
                     ) : (
-                      <span className="font-semibold text-primary">📢 Platform Announcement</span>
+                      <span className="font-semibold text-primary inline-flex items-center gap-1">
+                        <BellIcon className="h-3.5 w-3.5" />
+                        <span>Platform Announcement</span>
+                      </span>
                     )}
                     {item.teacherId?.fullName && (
                       <span>By: {item.teacherId.fullName}</span>
@@ -190,7 +196,8 @@ export function StudentNotices() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
                       >
-                        📎 View / Download Attached File ↗
+                        <PaperclipIcon className="h-3.5 w-3.5" />
+                        <span>View / Download Attached File ↗</span>
                       </a>
                     </div>
                   )}

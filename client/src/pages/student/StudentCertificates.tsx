@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Badge, Skeleton } from '@/components'
+import {
+  SearchIcon,
+  StarIcon,
+  AwardIcon,
+  LinkIcon,
+  RadioIcon,
+  ClipboardCheckIcon,
+  TimerIcon,
+  CheckCircleIcon,
+} from '@/components/ui/icons'
 import { certificateApi } from '@/services/api/certificate'
 import { enrollmentApi } from '@/services/api/enrollment'
 import { CertificateModal } from '@/components/certificate/CertificateModal'
@@ -99,8 +109,9 @@ export function StudentCertificates() {
           </p>
         </div>
         <Link to="/verify-certificate">
-          <Button variant="outline" size="sm" className="font-semibold text-primary">
-            🔍 Public Verification Tool
+          <Button variant="outline" size="sm" className="font-semibold text-primary inline-flex items-center gap-1.5">
+            <SearchIcon className="h-4 w-4" />
+            <span>Public Verification Tool</span>
           </Button>
         </Link>
       </div>
@@ -136,8 +147,9 @@ export function StudentCertificates() {
                     <span className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400 border border-amber-500/20">
                       ID: {cert.certificateNumber}
                     </span>
-                    <Badge variant="success" className="text-[11px] font-bold">
-                      ★ {cert.grade} ({cert.completionPercentage}%)
+                    <Badge variant="success" className="text-[11px] font-bold inline-flex items-center gap-1">
+                      <StarIcon className="h-3 w-3 fill-current" />
+                      <span>{cert.grade} ({cert.completionPercentage}%)</span>
                     </Badge>
                   </div>
 
@@ -153,16 +165,17 @@ export function StudentCertificates() {
                   <button
                     type="button"
                     onClick={() => setSelectedCert(cert)}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3.5 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer text-center"
+                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3.5 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5"
                   >
-                    🎓 View & Print PDF
+                    <AwardIcon className="h-4 w-4" />
+                    <span>View & Print PDF</span>
                   </button>
                   <Link
                     to={`/verify-certificate/${cert.certificateNumber}`}
-                    className="rounded-xl border border-border bg-surface hover:bg-background px-3 py-2.5 text-xs font-semibold text-text hover:text-primary transition-colors text-center"
+                    className="rounded-xl border border-border bg-surface hover:bg-background p-2.5 text-xs font-semibold text-text hover:text-primary transition-colors flex items-center justify-center"
                     title="Public Verification"
                   >
-                    🔗
+                    <LinkIcon className="h-4 w-4" />
                   </Link>
                 </div>
               </div>
@@ -232,11 +245,20 @@ export function StudentCertificates() {
 
                       {/* Task Breakdown */}
                       <div className="flex flex-wrap items-center gap-4 text-xs text-text-muted pt-1">
-                        <span>📡 Live Sessions: <strong>{progress?.breakdown.live.attended || 0}/{progress?.breakdown.live.total || 0}</strong></span>
+                        <span className="inline-flex items-center gap-1">
+                          <RadioIcon className="h-3.5 w-3.5 text-primary" />
+                          <span>Live Sessions: <strong>{progress?.breakdown.live.attended || 0}/{progress?.breakdown.live.total || 0}</strong></span>
+                        </span>
                         <span>•</span>
-                        <span>📝 Assignments: <strong>{progress?.breakdown.assignments.submitted || 0}/{progress?.breakdown.assignments.total || 0}</strong></span>
+                        <span className="inline-flex items-center gap-1">
+                          <ClipboardCheckIcon className="h-3.5 w-3.5 text-indigo-500" />
+                          <span>Assignments: <strong>{progress?.breakdown.assignments.submitted || 0}/{progress?.breakdown.assignments.total || 0}</strong></span>
+                        </span>
                         <span>•</span>
-                        <span>⏱️ Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
+                        <span className="inline-flex items-center gap-1">
+                          <TimerIcon className="h-3.5 w-3.5 text-amber-500" />
+                          <span>Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
+                        </span>
                       </div>
                     </div>
 
@@ -244,16 +266,18 @@ export function StudentCertificates() {
                     <div className="shrink-0 flex items-center gap-3 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
                       {hasCert ? (
                         <span className="inline-flex items-center gap-1.5 rounded-xl bg-success/10 px-3.5 py-2 text-xs font-bold text-success border border-success/20">
-                          ✓ Certificate Claimed
+                          <CheckCircleIcon className="h-3.5 w-3.5" />
+                          <span>Certificate Claimed</span>
                         </span>
                       ) : progress?.isEligibleForCertificate ? (
                         <Button
                           variant="primary"
                           onClick={() => handleClaim(String(classId))}
                           loading={claimingClassId === String(classId)}
-                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold"
+                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold inline-flex items-center gap-1.5"
                         >
-                          🎓 Claim Certificate
+                          <AwardIcon className="h-4 w-4" />
+                          <span>Claim Certificate</span>
                         </Button>
                       ) : (
                         <Link to={`/student/classes/${classId}`}>

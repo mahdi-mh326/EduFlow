@@ -129,7 +129,7 @@ export function TeacherAssignmentDetails() {
           toast.success(`Grade saved! Next student: ${next.studentId?.fullName || 'Student'}`)
           openGradeModal(next)
         } else {
-          toast.success('Grade saved! All pending submissions completed! 🎉')
+          toast.success('Grade saved! All pending submissions completed!')
           setGradingSubmission(null)
         }
       } else {

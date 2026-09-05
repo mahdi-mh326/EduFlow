@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button, Badge } from '@/components'
-import { SendIcon } from '@/components/ui/icons'
+import { SendIcon, MessageSquareIcon } from '@/components/ui/icons'
 import type { ChatMessage } from '@/hooks/useClassroomSocket'
 
 interface ClassroomChatProps {
@@ -36,7 +36,7 @@ export function ClassroomChat({ messages, onSendMessage, currentUserId }: Classr
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[250px] max-h-[400px]">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-text-muted py-8">
-            <span className="text-2xl mb-1">💬</span>
+            <MessageSquareIcon className="h-8 w-8 mb-2 text-text-muted/60" />
             <p className="text-xs">No messages yet. Say hello to the class!</p>
           </div>
         ) : (

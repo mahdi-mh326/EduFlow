@@ -19,6 +19,9 @@ import {
   InboxIcon,
   SearchIcon,
   AlertCircleIcon,
+  BookOpenIcon,
+  LayersIcon,
+  ZapIcon,
 } from '@/components/ui/icons'
 import type { AdminEnrollment, AdminClass } from '@/types/admin'
 
@@ -343,12 +346,14 @@ export function AdminEnrollments() {
                       </p>
 
                       <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted pt-1">
-                        <span className="font-semibold text-primary">
-                          📚 {course?.title || 'Course N/A'}
+                        <span className="font-semibold text-primary inline-flex items-center gap-1.5">
+                          <BookOpenIcon className="h-3.5 w-3.5" />
+                          <span>{course?.title || 'Course N/A'}</span>
                         </span>
                         {hasBatch ? (
-                          <span className="font-medium text-text bg-surface px-2 py-0.5 rounded border border-border">
-                            🏫 Batch: {cls?.batchName}
+                          <span className="font-medium text-text bg-surface px-2 py-0.5 rounded border border-border inline-flex items-center gap-1.5">
+                            <LayersIcon className="h-3.5 w-3.5 text-secondary" />
+                            <span>Batch: {cls?.batchName}</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">
@@ -369,7 +374,14 @@ export function AdminEnrollments() {
                       onClick={() => openAssignModal(enrollment)}
                       className="font-bold text-xs"
                     >
-                      {!hasBatch ? '⚡ Assign Batch' : 'Change Batch'}
+                      {!hasBatch ? (
+                        <span className="inline-flex items-center gap-1">
+                          <ZapIcon className="h-3.5 w-3.5" />
+                          <span>Assign Batch</span>
+                        </span>
+                      ) : (
+                        'Change Batch'
+                      )}
                     </Button>
 
                     <Button

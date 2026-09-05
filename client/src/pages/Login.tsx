@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast'
 import { Button, Input, Container } from '@/components'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/services/api/auth'
-import { EyeIcon, EyeSlashIcon } from '@/components/ui/icons'
+import { EyeIcon, EyeSlashIcon, GraduationCapIcon, UsersIcon, ShieldIcon } from '@/components/ui/icons'
 
 type LoginRole = 'student' | 'teacher' | 'admin'
 
@@ -14,7 +14,7 @@ const roleDetails: Record<
     title: string
     badge: string
     description: string
-    icon: string
+    icon: React.ComponentType<{ className?: string }>
     themeColor: string
     activeTabClass: string
   }
@@ -23,7 +23,7 @@ const roleDetails: Record<
     title: 'Student Portal',
     badge: 'Student Login',
     description: 'Access your enrolled courses, live classrooms, quizzes & track progress.',
-    icon: '🎓',
+    icon: GraduationCapIcon,
     themeColor: 'text-primary',
     activeTabClass: 'bg-primary text-white shadow-sm shadow-primary/30',
   },
@@ -31,7 +31,7 @@ const roleDetails: Record<
     title: 'Instructor Portal',
     badge: 'Teacher Login',
     description: 'Manage your classes, assignments, live streaming, and evaluate submissions.',
-    icon: '👨‍🏫',
+    icon: UsersIcon,
     themeColor: 'text-indigo-600',
     activeTabClass: 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30',
   },
@@ -39,7 +39,7 @@ const roleDetails: Record<
     title: 'Administrator Portal',
     badge: 'Admin Login',
     description: 'Institutional management, user control, revenue analytics, and system oversight.',
-    icon: '🛡️',
+    icon: ShieldIcon,
     themeColor: 'text-slate-900',
     activeTabClass: 'bg-slate-900 text-white shadow-sm shadow-slate-900/30',
   },
@@ -214,7 +214,9 @@ export function Login() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">🎓</span>
+                    <span className="p-2 rounded-xl bg-primary/10 text-primary">
+                      <GraduationCapIcon className="h-5 w-5" />
+                    </span>
                     <div>
                       <p className="text-xs font-bold text-text">Student Portal</p>
                       <p className="text-[11px] text-text-muted">Join live classrooms & courses</p>
@@ -231,7 +233,9 @@ export function Login() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">👨‍🏫</span>
+                    <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                      <UsersIcon className="h-5 w-5" />
+                    </span>
                     <div>
                       <p className="text-xs font-bold text-text">Instructor Portal</p>
                       <p className="text-[11px] text-text-muted">Teach live & grade assignments</p>
@@ -248,7 +252,9 @@ export function Login() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">🛡️</span>
+                    <span className="p-2 rounded-xl bg-slate-100 text-slate-700">
+                      <ShieldIcon className="h-5 w-5" />
+                    </span>
                     <div>
                       <p className="text-xs font-bold text-text">Admin Portal</p>
                       <p className="text-[11px] text-text-muted">Manage system & analytics</p>
@@ -270,6 +276,7 @@ export function Login() {
                     {(['student', 'teacher', 'admin'] as LoginRole[]).map((role) => {
                       const details = roleDetails[role]
                       const isSelected = selectedRole === role
+                      const TabIcon = details.icon
                       return (
                         <button
                           key={role}
@@ -281,7 +288,7 @@ export function Login() {
                               : 'text-text-muted hover:text-text hover:bg-white/60'
                           }`}
                         >
-                          <span>{details.icon}</span>
+                          <TabIcon className="h-4 w-4" />
                           <span className="capitalize">{role}</span>
                         </button>
                       )
@@ -291,7 +298,9 @@ export function Login() {
 
                 {/* Role Context Pill */}
                 <div className="mb-6 rounded-xl bg-slate-50 border border-border/80 p-3.5 flex items-start gap-3">
-                  <span className="text-xl shrink-0 mt-0.5">{currentRoleInfo.icon}</span>
+                  <span className="p-2 rounded-xl bg-primary/10 text-primary shrink-0 mt-0.5">
+                    <currentRoleInfo.icon className="h-4 w-4" />
+                  </span>
                   <div>
                     <h2 className="text-xs font-bold text-text">{currentRoleInfo.title}</h2>
                     <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">

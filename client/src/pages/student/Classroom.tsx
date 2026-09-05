@@ -12,6 +12,11 @@ import {
   AlertCircleIcon,
   SpinnerIcon,
   MessageSquareIcon,
+  HandIcon,
+  VideoCameraIcon,
+  VideoOffIcon,
+  MicIcon,
+  MicOffIcon,
 } from '@/components/ui/icons'
 import type { StudentLiveSession } from '@/types/student'
 
@@ -413,7 +418,7 @@ export function Classroom() {
                   }`}
                   title={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
                 >
-                  <span>✋</span>
+                  <HandIcon className="h-4 w-4" />
                   <span>{isHandRaised ? 'Hand Raised' : 'Raise Hand'}</span>
                 </button>
 
@@ -491,10 +496,30 @@ export function Classroom() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        {p.isHandRaised && <span title="Hand Raised">✋</span>}
-                        {p.isVideoOn ? <span title="Camera On">📹</span> : <span title="Camera Off">🚫</span>}
-                        {p.isAudioOn ? <span title="Mic On">🎙️</span> : <span title="Mic Muted">🔇</span>}
+                      <div className="flex items-center gap-1.5 text-text-muted">
+                        {p.isHandRaised && (
+                          <span title="Hand Raised" className="text-amber-500">
+                            <HandIcon className="h-3.5 w-3.5 animate-bounce" />
+                          </span>
+                        )}
+                        {p.isVideoOn ? (
+                          <span title="Camera On" className="text-emerald-500">
+                            <VideoCameraIcon className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <span title="Camera Off" className="text-rose-500/70">
+                            <VideoOffIcon className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                        {p.isAudioOn ? (
+                          <span title="Mic On" className="text-emerald-500">
+                            <MicIcon className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <span title="Mic Muted" className="text-rose-500/70">
+                            <MicOffIcon className="h-3.5 w-3.5" />
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

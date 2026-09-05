@@ -109,7 +109,7 @@ export function Courses() {
         <div className="mb-6 rounded-xl border border-border bg-surface p-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="sm:col-span-2 lg:col-span-2">
-              <SearchInput value={filters.search} onChange={(value) => updateFilter('search', value)} placeholder="Search courses..." aria-label="Search courses" />
+              <SearchInput  value={filters.search} onChange={(value) => updateFilter('search', value)} placeholder="Search courses..." aria-label="Search courses" />
             </div>
             <Select label="Category" options={categories} value={filters.category} onChange={(event) => updateFilter('category', event.target.value)} />
             <Select label="Level" options={levels} value={filters.level} onChange={(event) => updateFilter('level', event.target.value)} />

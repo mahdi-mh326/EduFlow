@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Badge, Skeleton, EmptyState } from '@/components'
+import { SearchIcon, GraduationCapIcon, LinkIcon } from '@/components/ui/icons'
 import { certificateApi } from '@/services/api/certificate'
 import { CertificateModal } from '@/components/certificate/CertificateModal'
 import type { Certificate } from '@/types/certificate'
@@ -65,8 +66,9 @@ export function AdminCertificates() {
         </div>
         <div className="flex items-center gap-3">
           <Link to="/verify-certificate">
-            <Button variant="outline" size="sm" className="font-semibold text-primary">
-              🔍 Public Verification
+            <Button variant="outline" size="sm" className="font-semibold text-primary inline-flex items-center gap-1.5">
+              <SearchIcon className="h-4 w-4" />
+              <span>Public Verification</span>
             </Button>
           </Link>
         </div>
@@ -153,16 +155,18 @@ export function AdminCertificates() {
                       <button
                         type="button"
                         onClick={() => setSelectedCert(cert)}
-                        className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-700 hover:bg-amber-500/20 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-700 hover:bg-amber-500/20 transition-all cursor-pointer"
                       >
-                        🎓 View
+                        <GraduationCapIcon className="h-3.5 w-3.5" />
+                        <span>View</span>
                       </button>
                       <Link
                         to={`/verify-certificate/${cert.certificateNumber}`}
                         target="_blank"
-                        className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text hover:text-primary transition-all"
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text hover:text-primary transition-all"
                       >
-                        🔗 Verify
+                        <LinkIcon className="h-3.5 w-3.5" />
+                        <span>Verify</span>
                       </Link>
                     </td>
                   </tr>

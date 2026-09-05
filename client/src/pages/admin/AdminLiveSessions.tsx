@@ -222,20 +222,23 @@ export function AdminLiveSessions() {
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 rounded-xl border border-border bg-surface p-1">
           {[
-            { key: 'live', label: `🔴 Live Now (${liveCount})` },
-            { key: 'completed', label: `Completed (${completedCount})` },
-            { key: 'all', label: `All (${sessions.length})` },
+            { key: 'live', label: `Live Now (${liveCount})`, isLive: true },
+            { key: 'completed', label: `Completed (${completedCount})`, isLive: false },
+            { key: 'all', label: `All (${sessions.length})`, isLive: false },
           ].map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key as TabType)}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
                 activeTab === t.key
                   ? 'bg-primary text-white shadow-xs'
                   : 'text-text-muted hover:text-text'
               }`}
             >
-              {t.label}
+              {t.isLive && (
+                <span className={`h-2 w-2 rounded-full ${activeTab === 'live' ? 'bg-white' : 'bg-rose-500'} animate-pulse`} />
+              )}
+              <span>{t.label}</span>
             </button>
           ))}
         </div>

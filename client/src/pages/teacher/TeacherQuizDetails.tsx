@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   CheckCircleIcon,
   XCircleIcon,
+  XIcon,
 } from '@/components/ui/icons'
 import type { TeacherQuiz, TeacherQuizAttempt } from '@/types/teacher'
 
@@ -547,9 +548,10 @@ export function TeacherQuizDetails() {
                         <button
                           type="button"
                           onClick={() => handleRemoveOption(idx)}
-                          className="text-xs text-error hover:underline px-1"
+                          className="text-text-muted hover:text-error p-1 transition-colors"
+                          title="Remove option"
                         >
-                          ✕
+                          <XIcon className="h-4 w-4" />
                         </button>
                       )}
                     </div>

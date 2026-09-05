@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { GraduationCapIcon, UsersIcon, ShieldIcon } from '@/components/ui/icons'
 
 export function LoginDropdown() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,25 +33,28 @@ export function LoginDropdown() {
       role: 'student',
       title: 'Student Login',
       description: 'Access courses & live classrooms',
-      icon: '🎓',
+      icon: GraduationCapIcon,
       href: '/login?role=student',
       colorClass: 'group-hover:text-primary',
+      iconBg: 'bg-primary/10 text-primary',
     },
     {
       role: 'teacher',
       title: 'Teacher Login',
       description: 'Instructor suite & live teaching',
-      icon: '👨‍🏫',
+      icon: UsersIcon,
       href: '/login?role=teacher',
       colorClass: 'group-hover:text-indigo-600',
+      iconBg: 'bg-indigo-50 text-indigo-600',
     },
     {
       role: 'admin',
       title: 'Admin Portal',
       description: 'Institutional management & control',
-      icon: '🛡️',
+      icon: ShieldIcon,
       href: '/login?role=admin',
       colorClass: 'group-hover:text-slate-900',
+      iconBg: 'bg-slate-100 text-slate-700',
     },
   ]
 
@@ -95,25 +99,30 @@ export function LoginDropdown() {
           </div>
 
           <div className="space-y-1">
-            {loginOptions.map((opt) => (
-              <Link
-                key={opt.role}
-                to={opt.href}
-                onClick={() => setIsOpen(false)}
-                className="group flex items-start gap-3 rounded-xl p-2.5 text-xs font-medium text-text hover:bg-slate-50 active:bg-slate-100 transition-colors"
-                role="menuitem"
-              >
-                <span className="text-2xl sm:text-xl shrink-0 mt-0.5">{opt.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-bold transition-colors ${opt.colorClass}`}>
-                    {opt.title}
-                  </p>
-                  <p className="text-[11px] text-text-muted">
-                    {opt.description}
-                  </p>
-                </div>
-              </Link>
-            ))}
+            {loginOptions.map((opt) => {
+              const Icon = opt.icon
+              return (
+                <Link
+                  key={opt.role}
+                  to={opt.href}
+                  onClick={() => setIsOpen(false)}
+                  className="group flex items-start gap-3 rounded-xl p-2.5 text-xs font-medium text-text hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                  role="menuitem"
+                >
+                  <span className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${opt.iconBg}`}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-bold transition-colors ${opt.colorClass}`}>
+                      {opt.title}
+                    </p>
+                    <p className="text-[11px] text-text-muted">
+                      {opt.description}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
 
           <div className="border-t border-border/80 mt-2 pt-2 px-3 py-1 flex items-center justify-between text-[11px]">

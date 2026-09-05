@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { Badge } from '@/components'
+import { HandIcon, MonitorIcon } from '@/components/ui/icons'
 
 
 interface VideoTileProps {
@@ -117,14 +118,16 @@ export function VideoTile({
         {/* Hand Raised Badge */}
         {isHandRaised && (
           <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white shadow-lg backdrop-blur-sm animate-bounce">
-            <span>✋ Hand Raised</span>
+            <HandIcon className="h-3.5 w-3.5" />
+            <span>Hand Raised</span>
           </div>
         )}
 
         {/* Screen Sharing Indicator */}
         {isScreenSharing && (
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
-            <span>🖥️ Screen Share</span>
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+            <MonitorIcon className="h-3.5 w-3.5" />
+            <span>Screen Share</span>
           </div>
         )}
       </div>

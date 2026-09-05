@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { BotIcon, ChevronDownIcon } from '@/components/ui/icons'
+import { BotIcon, ChevronDownIcon, AlertTriangleIcon } from '@/components/ui/icons'
 import type { ChatMessage as ChatMessageType } from '@/types/chatbot'
 
 function formatTime(timestamp: number | undefined) {
@@ -142,7 +142,7 @@ export function ChatMessage({ message, showSources, onToggleSources }: ChatMessa
         >
           {message.error ? (
             <div className="flex items-start gap-2 text-error">
-              <span>⚠️</span>
+              <AlertTriangleIcon className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{message.content}</span>
             </div>
           ) : (
