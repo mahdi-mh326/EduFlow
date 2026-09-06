@@ -29,7 +29,6 @@ export function AdminTeacherForm({ open, onClose, onSuccess, teacher }: AdminTea
     fullName: '',
     email: '',
     gender: 'male' as 'male' | 'female' | 'other',
-    avatar: '',
     designation: '',
     qualification: '',
   })
@@ -55,7 +54,6 @@ export function AdminTeacherForm({ open, onClose, onSuccess, teacher }: AdminTea
           fullName: teacher.fullName || '',
           email: teacher.email || '',
           gender: teacher.gender || 'male',
-          avatar: teacher.avatar || '',
           designation: teacher.teacherProfile?.designation || '',
           qualification: teacher.teacherProfile?.qualification || '',
         })
@@ -66,7 +64,6 @@ export function AdminTeacherForm({ open, onClose, onSuccess, teacher }: AdminTea
           fullName: '',
           email: '',
           gender: 'male',
-          avatar: '',
           designation: '',
           qualification: '',
         })
@@ -93,10 +90,6 @@ export function AdminTeacherForm({ open, onClose, onSuccess, teacher }: AdminTea
         gender: formData.gender,
         designation: formData.designation.trim(),
         qualification: formData.qualification.trim(),
-      }
-
-      if (formData.avatar && formData.avatar.trim()) {
-        payload.avatar = formData.avatar.trim()
       }
 
       if (teacher) {
@@ -150,12 +143,6 @@ export function AdminTeacherForm({ open, onClose, onSuccess, teacher }: AdminTea
           value={formData.gender}
           onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
           options={GENDERS}
-        />
-        <Input
-          label="Avatar URL (Optional)"
-          value={formData.avatar}
-          onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-          placeholder="https://example.com/avatar.jpg"
         />
         <Input
           label="Designation"
