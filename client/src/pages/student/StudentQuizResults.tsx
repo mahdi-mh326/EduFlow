@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Badge, Skeleton, ErrorState, EmptyState, Container } from '@/components'
 import { quizApi } from '@/services/api/quiz'
 import { ClipboardListIcon } from '@/components/ui/icons'
@@ -150,6 +151,7 @@ export function StudentQuizResults() {
                         <th className="px-3 py-2 text-xs font-medium text-text-muted">Status</th>
                         <th className="px-3 py-2 text-xs font-medium text-text-muted">Started</th>
                         <th className="px-3 py-2 text-xs font-medium text-text-muted">Submitted</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-text-muted">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -165,6 +167,18 @@ export function StudentQuizResults() {
                           </td>
                           <td className="px-3 py-2 text-text-muted">{formatDate(attempt.startedAt)} {formatTime(attempt.startedAt)}</td>
                           <td className="px-3 py-2 text-text-muted">{attempt.submittedAt ? `${formatDate(attempt.submittedAt)} ${formatTime(attempt.submittedAt)}` : 'N/A'}</td>
+                          <td className="px-3 py-2 text-right">
+                            {attempt.status === 'submitted' ? (
+                              <Link
+                                to={`/student/quizzes/${quiz._id}?reviewAttemptId=${attempt._id}`}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                              >
+                                Review Solutions
+                              </Link>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

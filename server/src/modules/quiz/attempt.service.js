@@ -99,6 +99,7 @@ const startAttempt = async (quizId, studentId) => {
 
   const attempt = await QuizAttempt.create({
     quizId,
+    classId: quiz.classId,
     studentId,
     attemptNumber: attemptCount + 1,
     startedAt,
@@ -160,20 +161,30 @@ const getMyAttempts = async (quizId, studentId) => {
   return attempts;
 };
 
-const gradeSubmission = async (answers, questions) => {
+const gradeSubmission = (submittedAnswers, questions) => {
   let score = 0;
   const questionMap = new Map(questions.map((q) => [q._id.toString(), q]));
+  const gradedAnswers = [];
 
-  for (const answer of answers) {
-    const question = questionMap.get(answer.questionId);
-    if (question && question.correctAnswer === answer.selectedOption) {
-      score += question.marks;
+  for (const item of submittedAnswers || []) {
+    const q = questionMap.get(item.questionId);
+    if (q) {
+      const isCorrect = q.correctAnswer === item.selectedOption;
+      const marksEarned = isCorrect ? (Number(q.marks) || 0) : 0;
+      score += marksEarned;
+      gradedAnswers.push({
+        questionId: q._id,
+        selectedOption: item.selectedOption,
+        isCorrect,
+        marksEarned,
+      });
     }
   }
 
-  const percentage = Math.round((score / questions.reduce((sum, q) => sum + q.marks, 0)) * 100);
+  const sumTotalMarks = questions.reduce((sum, q) => sum + (Number(q.marks) || 0), 0) || 1;
+  const percentage = Math.round((score / sumTotalMarks) * 100);
 
-  return { score, percentage };
+  return { score, percentage, sumTotalMarks, gradedAnswers };
 };
 
 const submitAttempt = async (quizId, attemptId, payload, studentId) => {
@@ -200,7 +211,9 @@ const submitAttempt = async (quizId, attemptId, payload, studentId) => {
     throw new ApiError(400, ATTEMPT_MESSAGES.ATTEMPT_ALREADY_SUBMITTED);
   }
 
-  if (new Date() > attempt.expiresAt) {
+  // Grace period of 60 seconds to allow auto-submitting near or just after expiresAt
+  const isGracePeriod = new Date().getTime() <= new Date(attempt.expiresAt).getTime() + 60000;
+  if (new Date() > attempt.expiresAt && !isGracePeriod) {
     attempt.status = ATTEMPT_STATUS.EXPIRED;
     await attempt.save();
     throw new ApiError(400, ATTEMPT_MESSAGES.ATTEMPT_EXPIRED);
@@ -212,20 +225,22 @@ const submitAttempt = async (quizId, attemptId, payload, studentId) => {
   }).sort({ order: 1 });
 
   const questionIds = questions.map((q) => q._id.toString());
-  for (const answer of payload.answers) {
+  const answersList = payload.answers || [];
+  for (const answer of answersList) {
     if (!questionIds.includes(answer.questionId)) {
       throw new ApiError(400, ATTEMPT_MESSAGES.INVALID_QUESTION);
     }
   }
 
-  const { score, percentage } = await gradeSubmission(payload.answers, questions);
+  const { score, percentage, sumTotalMarks, gradedAnswers } = gradeSubmission(answersList, questions);
 
   attempt.status = ATTEMPT_STATUS.SUBMITTED;
   attempt.submittedAt = new Date();
+  attempt.answers = gradedAnswers;
   attempt.score = score;
-  attempt.totalMarks = quiz.totalMarks;
+  attempt.totalMarks = sumTotalMarks || quiz.totalMarks;
   attempt.percentage = percentage;
-  attempt.passed = percentage >= ((quiz.passingMarks / quiz.totalMarks) * 100);
+  attempt.passed = percentage >= ((quiz.passingMarks / (attempt.totalMarks || 1)) * 100);
 
   await attempt.save();
 
@@ -252,10 +267,85 @@ const getAttempts = async (quizId, userId, userRole) => {
   return attempts;
 };
 
+const getAttemptReview = async (quizId, attemptId, userId, userRole) => {
+  const quiz = await validateQuiz(quizId);
+
+  const attempt = await QuizAttempt.findOne({
+    _id: attemptId,
+    quizId,
+    isDeleted: { $ne: true },
+  }).populate("studentId", "fullName email");
+
+  if (!attempt) {
+    throw new ApiError(404, ATTEMPT_MESSAGES.ATTEMPT_NOT_FOUND);
+  }
+
+  if (userRole === USER_ROLE.STUDENT) {
+    if (attempt.studentId._id.toString() !== userId.toString()) {
+      throw new ApiError(403, "You are not authorized to view this attempt review");
+    }
+  } else if (userRole === USER_ROLE.TEACHER) {
+    if (quiz.teacherId.toString() !== userId.toString()) {
+      throw new ApiError(403, QUIZ_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
+  }
+
+  const questions = await Question.find({
+    quizId,
+    isDeleted: { $ne: true },
+  })
+    .sort({ order: 1 })
+    .select("-isDeleted -deletedAt");
+
+  const answerMap = new Map((attempt.answers || []).map((a) => [a.questionId.toString(), a]));
+
+  const reviewQuestions = questions.map((q) => {
+    const studentAnswer = answerMap.get(q._id.toString());
+    return {
+      _id: q._id,
+      questionText: q.questionText,
+      type: q.type,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      marks: q.marks,
+      order: q.order,
+      explanation: q.explanation || "",
+      studentSelectedOption: studentAnswer ? studentAnswer.selectedOption : null,
+      isCorrect: studentAnswer ? studentAnswer.isCorrect : false,
+      marksEarned: studentAnswer ? studentAnswer.marksEarned : 0,
+    };
+  });
+
+  return {
+    attempt: {
+      _id: attempt._id,
+      quizId: attempt.quizId,
+      studentId: attempt.studentId,
+      attemptNumber: attempt.attemptNumber,
+      startedAt: attempt.startedAt,
+      submittedAt: attempt.submittedAt,
+      status: attempt.status,
+      score: attempt.score,
+      totalMarks: attempt.totalMarks,
+      percentage: attempt.percentage,
+      passed: attempt.passed,
+    },
+    quiz: {
+      _id: quiz._id,
+      title: quiz.title,
+      description: quiz.description,
+      totalMarks: quiz.totalMarks,
+      passingMarks: quiz.passingMarks,
+    },
+    reviewQuestions,
+  };
+};
+
 export const AttemptService = {
   startAttempt,
   getCurrentAttempt,
   getMyAttempts,
   submitAttempt,
   getAttempts,
+  getAttemptReview,
 };

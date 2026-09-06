@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { StudentQuiz, StudentQuizAttempt, StudentQuizQuestion } from '@/types/quiz'
+import type { StudentQuiz, StudentQuizAttempt, StudentQuizQuestion, AttemptReviewResponse } from '@/types/quiz'
 
 export const quizApi = {
   getQuizzes: async (params?: { page?: number; limit?: number; search?: string }): Promise<{ meta: { total: number; page: number; limit: number; totalPages: number }; data: StudentQuiz[] }> => {
@@ -34,6 +34,11 @@ export const quizApi = {
 
   submitAttempt: async (quizId: string, attemptId: string, answers: Array<{ questionId: string; selectedOption: string }>): Promise<StudentQuizAttempt> => {
     const { data } = await apiClient.post(`/quizzes/${quizId}/attempts/${attemptId}/submit`, { answers })
+    return data.data
+  },
+
+  getAttemptReview: async (quizId: string, attemptId: string): Promise<AttemptReviewResponse> => {
+    const { data } = await apiClient.get(`/quizzes/${quizId}/attempts/${attemptId}/review`)
     return data.data
   },
 }

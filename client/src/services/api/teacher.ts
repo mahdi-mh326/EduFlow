@@ -152,6 +152,7 @@ export const teacherApi = {
     correctAnswer: string
     marks: number
     order: number
+    explanation?: string
   }) => {
     const { data } = await apiClient.post(`/quizzes/${quizId}/questions`, payload)
     return data.data
@@ -163,6 +164,7 @@ export const teacherApi = {
     correctAnswer: string
     marks: number
     order: number
+    explanation?: string
   }>) => {
     const { data } = await apiClient.patch(`/quizzes/${quizId}/questions/${questionId}`, payload)
     return data.data
@@ -171,6 +173,11 @@ export const teacherApi = {
   deleteQuestion: async (quizId: string, questionId: string) => {
     const { data } = await apiClient.delete(`/quizzes/${quizId}/questions/${questionId}`)
     return data
+  },
+
+  getAttemptReview: async (quizId: string, attemptId: string) => {
+    const { data } = await apiClient.get(`/quizzes/${quizId}/attempts/${attemptId}/review`)
+    return data.data
   },
 
   createLiveSession: async (payload: {

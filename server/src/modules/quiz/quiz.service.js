@@ -7,6 +7,7 @@ import Quiz from "./quiz.model.js";
 import Class from "../class/class.model.js";
 import Course from "../course/course.model.js";
 import User from "../user/user.model.js";
+import Question from "./question.model.js";
 import ApiError from "../../shared/ApiError.js";
 import { USER_ROLE, USER_STATUS } from "../user/user.constant.js";
 import { COURSE_STATUS } from "../course/course.constant.js";
@@ -235,6 +236,16 @@ const updateQuiz = async (id, payload, userId, userRole) => {
   if (userRole === USER_ROLE.TEACHER) {
     if (quiz.teacherId.toString() !== userId.toString()) {
       throw new ApiError(403, QUIZ_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
+  }
+
+  if (payload.status === QUIZ_STATUS.PUBLISHED) {
+    const questionCount = await Question.countDocuments({
+      quizId: id,
+      isDeleted: { $ne: true },
+    });
+    if (questionCount === 0) {
+      throw new ApiError(400, "Cannot publish a quiz with no questions. Please add at least one question first.");
     }
   }
 

@@ -49,13 +49,22 @@ export interface StudentQuizQuestion {
   options: QuizQuestionOption[]
   marks: number
   order: number
+  explanation?: string
 }
 
 export type QuizAttemptStatus = 'in_progress' | 'submitted' | 'expired'
 
+export interface StudentAttemptAnswer {
+  questionId: string
+  selectedOption: string
+  isCorrect: boolean
+  marksEarned: number
+}
+
 export interface StudentQuizAttempt {
   _id: string
   quizId: string
+  studentId?: string | { _id: string; fullName: string; email: string }
   attemptNumber: number
   startedAt: string
   expiresAt: string
@@ -65,4 +74,31 @@ export interface StudentQuizAttempt {
   totalMarks: number
   percentage: number
   passed: boolean
+  answers?: StudentAttemptAnswer[]
+}
+
+export interface ReviewQuestion {
+  _id: string
+  questionText: string
+  type: 'mcq'
+  options: QuizQuestionOption[]
+  correctAnswer: string
+  marks: number
+  order: number
+  explanation?: string
+  studentSelectedOption: string | null
+  isCorrect: boolean
+  marksEarned: number
+}
+
+export interface AttemptReviewResponse {
+  attempt: StudentQuizAttempt
+  quiz: {
+    _id: string
+    title: string
+    description?: string
+    totalMarks: number
+    passingMarks: number
+  }
+  reviewQuestions: ReviewQuestion[]
 }

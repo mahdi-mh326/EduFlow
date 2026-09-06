@@ -47,6 +47,11 @@ const questionSchema = new mongoose.Schema(
       required: [true, "Order is required"],
       min: [1, "Order must be at least 1"],
     },
+    explanation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

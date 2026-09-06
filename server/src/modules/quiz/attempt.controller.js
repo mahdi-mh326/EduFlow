@@ -59,10 +59,24 @@ const getAttempts = catchAsync(async (req, res) => {
   });
 });
 
+const getAttemptReview = catchAsync(async (req, res) => {
+  const quizId = req.params.quizId || req.params.id;
+  const { attemptId } = req.params;
+  const result = await AttemptService.getAttemptReview(quizId, attemptId, req.user._id, req.user.role);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Attempt review fetched successfully",
+    data: result,
+  });
+});
+
 export const AttemptController = {
   startAttempt,
   getCurrentAttempt,
   getMyAttempts,
   submitAttempt,
   getAttempts,
+  getAttemptReview,
 };

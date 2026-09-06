@@ -16,6 +16,7 @@ const createQuestionSchema = z.object({
     correctAnswer: z.string().min(1, "Correct answer is required"),
     marks: z.number().min(1, "Marks must be at least 1"),
     order: z.number().min(1, "Order must be at least 1"),
+    explanation: z.string().optional().or(z.literal("")),
   }),
 });
 
@@ -36,6 +37,7 @@ const updateQuestionSchema = z.object({
       correctAnswer: z.string().min(1, "Correct answer is required").optional(),
       marks: z.number().min(1, "Marks must be at least 1").optional(),
       order: z.number().min(1, "Order must be at least 1").optional(),
+      explanation: z.string().optional().or(z.literal("")),
     })
     .strict()
     .refine((data) => Object.keys(data).length > 0, {

@@ -94,6 +94,13 @@ router.post(
 );
 
 router.get(
+  "/:id/attempts/:attemptId/review",
+  authenticate,
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER, USER_ROLE.STUDENT),
+  AttemptController.getAttemptReview
+);
+
+router.get(
   "/:quizId/attempts",
   authenticate,
   authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),

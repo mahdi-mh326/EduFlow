@@ -11,7 +11,7 @@ const submitAttemptSchema = z.object({
         questionId: z.string().min(1, "Question ID is required"),
         selectedOption: z.string().min(1, "Selected option is required"),
       })
-    ).min(1, "At least one answer is required"),
+    ).default([]),
   }),
 });
 

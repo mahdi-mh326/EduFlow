@@ -33,6 +33,16 @@ const validateTeacherOwnership = async (quizId, teacherId) => {
   return quiz;
 };
 
+const syncQuizTotalMarks = async (quizId) => {
+  const questions = await Question.find({
+    quizId,
+    isDeleted: { $ne: true },
+  });
+  const totalMarks = questions.reduce((sum, q) => sum + (Number(q.marks) || 0), 0);
+  await Quiz.findByIdAndUpdate(quizId, { totalMarks });
+  return totalMarks;
+};
+
 const createQuestion = async (quizId, payload, userId, userRole) => {
   const quiz = await validateQuiz(quizId);
 
@@ -57,8 +67,11 @@ const createQuestion = async (quizId, payload, userId, userRole) => {
     correctAnswer: payload.correctAnswer,
     marks: payload.marks,
     order: payload.order,
+    explanation: payload.explanation || "",
     createdBy: userId,
   });
+
+  await syncQuizTotalMarks(quizId);
 
   const populated = await Question.findById(question._id)
     .populate("quizId", "title")
@@ -89,6 +102,7 @@ const getQuestions = async (quizId, userId, userRole) => {
     const safeQuestions = questions.map((q) => {
       const qObj = q.toObject();
       delete qObj.correctAnswer;
+      delete qObj.explanation;
       return qObj;
     });
     return safeQuestions;
@@ -121,6 +135,7 @@ const getQuestionById = async (quizId, questionId, userId, userRole) => {
   if (userRole === USER_ROLE.STUDENT) {
     const qObj = question.toObject();
     delete qObj.correctAnswer;
+    delete qObj.explanation;
     return qObj;
   }
 
@@ -166,6 +181,10 @@ const updateQuestion = async (quizId, questionId, payload, userId, userRole) => 
     .populate("quizId", "title")
     .select("-isDeleted -deletedAt");
 
+  if (payload.marks !== undefined) {
+    await syncQuizTotalMarks(quizId);
+  }
+
   return updatedQuestion;
 };
 
@@ -190,6 +209,8 @@ const deleteQuestion = async (quizId, questionId, userId, userRole) => {
     isDeleted: true,
     deletedAt: new Date(),
   });
+
+  await syncQuizTotalMarks(quizId);
 
   return { message: QUESTION_MESSAGES.QUESTION_DELETED };
 };

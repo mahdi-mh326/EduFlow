@@ -36,30 +36,40 @@ const calculateStudentProgress = async (studentId, classId) => {
   });
 
   // 2. Assignments & Submissions
-  const totalAssignments = await Assignment.countDocuments({
+  const assignments = await Assignment.find({
     classId,
     status: "published",
     isDeleted: { $ne: true },
-  });
-  const submittedAssignments = await Submission.countDocuments({
-    classId,
-    studentId,
-    status: { $in: ["submitted", "graded"] },
-    isDeleted: { $ne: true },
-  });
+  }).select("_id");
+  const assignmentIds = assignments.map((a) => a._id);
+  const totalAssignments = assignmentIds.length;
+
+  const submittedAssignments = totalAssignments > 0
+    ? await Submission.countDocuments({
+        assignmentId: { $in: assignmentIds },
+        studentId,
+        status: { $in: ["submitted", "graded"] },
+        isDeleted: { $ne: true },
+      })
+    : 0;
 
   // 3. Quizzes & Attempts
-  const totalQuizzes = await Quiz.countDocuments({
+  const quizzes = await Quiz.find({
     classId,
     status: "published",
     isDeleted: { $ne: true },
-  });
-  const attemptedQuizzes = await QuizAttempt.countDocuments({
-    classId,
-    studentId,
-    status: "completed",
-    isDeleted: { $ne: true },
-  });
+  }).select("_id");
+  const quizIds = quizzes.map((q) => q._id);
+  const totalQuizzes = quizIds.length;
+
+  const attemptedQuizzes = quizIds.length > 0
+    ? await QuizAttempt.countDocuments({
+        quizId: { $in: quizIds },
+        studentId,
+        status: { $in: ["submitted", "completed"] },
+        isDeleted: { $ne: true },
+      })
+    : 0;
 
   const totalItems = totalLive + totalAssignments + totalQuizzes;
   const completedItems = attendedLive + submittedAssignments + attemptedQuizzes;

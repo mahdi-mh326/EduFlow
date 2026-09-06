@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Badge, Button, Container, EmptyState, ErrorState, Pagination, SearchInput, Skeleton } from '@/components'
 import { quizApi } from '@/services/api/quiz'
 import type { StudentQuiz } from '@/types/quiz'
-import { BookOpenIcon, ClockIcon, FileTextIcon, InboxIcon, UsersIcon } from '@/components/ui/icons'
+import { BookOpenIcon, ClockIcon, FileTextIcon, InboxIcon, UsersIcon, ClipboardListIcon } from '@/components/ui/icons'
 import { formatDate } from '@/utils'
 
 function getQuizState(quiz: StudentQuiz) {
@@ -46,7 +46,19 @@ export function Quizzes() {
 
   return (
     <Container className="py-8">
-      <div className="mb-6"><h1 className="text-2xl font-bold text-text sm:text-3xl">Quizzes</h1><p className="mt-1 text-sm text-text-muted">Complete knowledge checks for your enrolled courses.</p></div>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text sm:text-3xl">Quizzes</h1>
+          <p className="mt-1 text-sm text-text-muted">Complete knowledge checks for your enrolled courses.</p>
+        </div>
+        <Link
+          to="/student/quizzes/results"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3.5 py-2 text-sm font-medium text-text transition hover:bg-background hover:border-primary"
+        >
+          <ClipboardListIcon className="h-4 w-4 text-primary" />
+          Quiz Results & History
+        </Link>
+      </div>
       <div className="mb-6"><SearchInput value={search} onChange={setSearch} placeholder="Search quizzes..." aria-label="Search quizzes" className="max-w-md" /></div>
       {loading ? (
         <div className="space-y-4" aria-label="Loading quizzes">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="rounded-xl border border-border bg-surface p-5"><Skeleton variant="text" height="1.25rem" width="60%" /><Skeleton variant="text" height="1rem" width="40%" className="mt-2" /><Skeleton variant="text" height="1rem" width="80%" className="mt-3" /></div>)}</div>

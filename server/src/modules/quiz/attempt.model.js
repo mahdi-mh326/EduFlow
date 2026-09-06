@@ -8,6 +8,11 @@ const attemptSchema = new mongoose.Schema(
       ref: "Quiz",
       required: [true, "Quiz is required"],
     },
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      required: false,
+    },
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -23,6 +28,28 @@ const attemptSchema = new mongoose.Schema(
       required: [true, "Attempt number is required"],
       min: [1, "Attempt number must be at least 1"],
     },
+    answers: [
+      {
+        questionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Question",
+          required: true,
+        },
+        selectedOption: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        isCorrect: {
+          type: Boolean,
+          default: false,
+        },
+        marksEarned: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
     startedAt: {
       type: Date,
       required: [true, "Start time is required"],
@@ -85,6 +112,7 @@ const attemptSchema = new mongoose.Schema(
 attemptSchema.index({ quizId: 1, studentId: 1, attemptNumber: 1 }, { unique: true, sparse: true });
 attemptSchema.index({ studentId: 1, createdAt: -1 });
 attemptSchema.index({ quizId: 1, status: 1, createdAt: -1 });
+attemptSchema.index({ classId: 1, studentId: 1, status: 1 });
 
 const QuizAttempt = mongoose.model("QuizAttempt", attemptSchema);
 export default QuizAttempt;

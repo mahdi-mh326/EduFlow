@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   XIcon,
+  AlertCircleIcon,
 } from '@/components/ui/icons'
 import type { TeacherQuiz, TeacherQuizAttempt } from '@/types/teacher'
 
@@ -53,10 +54,18 @@ export function TeacherQuizDetails() {
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null)
 
+  // Quick status toggle
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  // Student attempt review modal
+  const [reviewAttempt, setReviewAttempt] = useState<any | null>(null)
+  const [loadingReviewId, setLoadingReviewId] = useState<string | null>(null)
+
   const [questionForm, setQuestionForm] = useState({
     questionText: '',
     marks: 1,
     order: 1,
+    explanation: '',
     options: [
       { key: 'A', text: '' },
       { key: 'B', text: '' },
@@ -91,12 +100,48 @@ export function TeacherQuizDetails() {
     loadData()
   }, [quizId])
 
+  const handleUpdateStatus = async (newStatus: 'draft' | 'published' | 'closed') => {
+    if (!quizId) return
+    if (newStatus === 'published' && questions.length === 0) {
+      toast.error('Cannot publish a quiz with 0 questions. Please add questions first.')
+      return
+    }
+
+    setUpdatingStatus(true)
+    try {
+      await teacherApi.updateQuiz(quizId, { status: newStatus })
+      toast.success(`Quiz status updated to ${newStatus}`)
+      const updatedQuiz = await teacherApi.getQuizById(quizId)
+      setQuiz(updatedQuiz as any)
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Failed to update quiz status.'
+      toast.error(message)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  const handleOpenAttemptReview = async (attemptId: string) => {
+    if (!quizId) return
+    setLoadingReviewId(attemptId)
+    try {
+      const data = await teacherApi.getAttemptReview(quizId, attemptId)
+      setReviewAttempt(data)
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Failed to load student attempt details.'
+      toast.error(msg)
+    } finally {
+      setLoadingReviewId(null)
+    }
+  }
+
   const openAddQuestion = () => {
     setEditingQuestion(null)
     setQuestionForm({
       questionText: '',
       marks: 1,
       order: questions.length + 1,
+      explanation: '',
       options: [
         { key: 'A', text: '' },
         { key: 'B', text: '' },
@@ -114,10 +159,14 @@ export function TeacherQuizDetails() {
       questionText: q.questionText || '',
       marks: q.marks || 1,
       order: q.order || 1,
-      options: q.options && q.options.length >= 2 ? q.options : [
-        { key: 'A', text: '' },
-        { key: 'B', text: '' },
-      ],
+      explanation: q.explanation || '',
+      options:
+        q.options && q.options.length >= 2
+          ? q.options
+          : [
+              { key: 'A', text: '' },
+              { key: 'B', text: '' },
+            ],
       correctAnswer: q.correctAnswer || 'A',
     })
     setIsQuestionModalOpen(true)
@@ -142,10 +191,12 @@ export function TeacherQuizDetails() {
       toast.error('A question must have at least 2 options.')
       return
     }
-    const next = questionForm.options.filter((_, i) => i !== index).map((opt, i) => ({
-      key: String.fromCharCode(65 + i),
-      text: opt.text,
-    }))
+    const next = questionForm.options
+      .filter((_, i) => i !== index)
+      .map((opt, i) => ({
+        key: String.fromCharCode(65 + i),
+        text: opt.text,
+      }))
     let nextCorrect = questionForm.correctAnswer
     if (!next.some((o) => o.key === nextCorrect)) {
       nextCorrect = next[0].key
@@ -177,8 +228,12 @@ export function TeacherQuizDetails() {
         toast.success('Question added successfully')
       }
       setIsQuestionModalOpen(false)
-      const freshQuestions = await teacherApi.getQuestions(quizId)
+      const [freshQuestions, freshQuiz] = await Promise.all([
+        teacherApi.getQuestions(quizId),
+        teacherApi.getQuizById(quizId),
+      ])
       setQuestions(freshQuestions || [])
+      setQuiz(freshQuiz as any)
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to save question.'
       toast.error(message)
@@ -196,6 +251,8 @@ export function TeacherQuizDetails() {
       await teacherApi.deleteQuestion(quizId, questionId)
       toast.success('Question deleted')
       setQuestions((prev) => prev.filter((q) => q._id !== questionId))
+      const freshQuiz = await teacherApi.getQuizById(quizId)
+      setQuiz(freshQuiz as any)
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to delete question.'
       toast.error(message)
@@ -204,7 +261,10 @@ export function TeacherQuizDetails() {
     }
   }
 
-  const avgScore = attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length) : 0
+  const avgScore =
+    attempts.length > 0
+      ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length)
+      : 0
 
   if (loading) {
     return (
@@ -255,17 +315,62 @@ export function TeacherQuizDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Link to={backUrl} className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80">
-          <ChevronLeftIcon className="h-4 w-4" />
-          Back to Class Details
-        </Link>
+      {/* Quiz Header & Quick Actions */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <Link
+            to={backUrl}
+            className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Back to Class Details
+          </Link>
 
-        <div>
-          <h1 className="text-2xl font-bold text-text sm:text-3xl">{quiz.title}</h1>
-          <p className="mt-1 text-sm text-text-muted">
-            {quiz.courseId?.title || 'Course'} • {quiz.classId?.batchName || 'Class'}
-          </p>
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-text sm:text-3xl">{quiz.title}</h1>
+              <Badge variant={getStatusVariant(quiz.status)} className="capitalize">
+                {quiz.status}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm text-text-muted">
+              {quiz.courseId?.title || 'Course'} • {quiz.classId?.batchName || 'Class'}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Publish / Close Buttons */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {quiz.status === 'draft' && (
+            <Button
+              variant="primary"
+              size="sm"
+              loading={updatingStatus}
+              onClick={() => handleUpdateStatus('published')}
+            >
+              Publish Quiz
+            </Button>
+          )}
+          {quiz.status === 'published' && (
+            <Button
+              variant="outline"
+              size="sm"
+              loading={updatingStatus}
+              onClick={() => handleUpdateStatus('closed')}
+            >
+              Close Quiz
+            </Button>
+          )}
+          {quiz.status === 'closed' && (
+            <Button
+              variant="primary"
+              size="sm"
+              loading={updatingStatus}
+              onClick={() => handleUpdateStatus('published')}
+            >
+              Reopen Quiz
+            </Button>
+          )}
         </div>
       </div>
 
@@ -291,13 +396,13 @@ export function TeacherQuizDetails() {
               <p className="text-sm text-text whitespace-pre-wrap">{quiz.instructions}</p>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-xs text-text-muted">Duration</p>
               <p className="font-medium text-text">{quiz.durationMinutes} minutes</p>
             </div>
             <div>
-              <p className="text-xs text-text-muted">Total Marks</p>
+              <p className="text-xs text-text-muted">Total Marks (from questions)</p>
               <p className="font-medium text-text">{quiz.totalMarks}</p>
             </div>
             <div>
@@ -325,7 +430,9 @@ export function TeacherQuizDetails() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-text">Quiz Questions</h2>
-            <p className="text-xs text-text-muted">{questions.length} questions in this quiz</p>
+            <p className="text-xs text-text-muted">
+              {questions.length} questions · Total {quiz.totalMarks} marks
+            </p>
           </div>
           <Button variant="primary" size="sm" onClick={openAddQuestion}>
             Add Question
@@ -335,7 +442,7 @@ export function TeacherQuizDetails() {
         {questions.length === 0 ? (
           <EmptyState
             title="No questions yet"
-            description="Add multiple choice questions for students to answer."
+            description="Add multiple choice questions with options and explanations."
             icon={<BookOpenIcon className="h-12 w-12" />}
             action={
               <Button variant="primary" size="sm" onClick={openAddQuestion}>
@@ -354,7 +461,9 @@ export function TeacherQuizDetails() {
                         {index + 1}
                       </span>
                       <h3 className="text-sm font-semibold text-text">{q.questionText}</h3>
-                      <Badge variant="neutral" className="text-xs">{q.marks} mark{q.marks === 1 ? '' : 's'}</Badge>
+                      <Badge variant="neutral" className="text-xs">
+                        {q.marks} mark{q.marks === 1 ? '' : 's'}
+                      </Badge>
                     </div>
 
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -369,12 +478,28 @@ export function TeacherQuizDetails() {
                                 : 'border-border bg-surface text-text'
                             }`}
                           >
-                            <span><strong className="mr-1">{opt.key}.</strong> {opt.text}</span>
-                            {isCorrect && <Badge variant="success" className="text-[10px]">Correct</Badge>}
+                            <span>
+                              <strong className="mr-1">{opt.key}.</strong> {opt.text}
+                            </span>
+                            {isCorrect && (
+                              <Badge variant="success" className="text-[10px]">
+                                Correct
+                              </Badge>
+                            )}
                           </div>
                         )
                       })}
                     </div>
+
+                    {q.explanation && (
+                      <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs text-text">
+                        <div className="flex items-center gap-1 font-semibold text-primary mb-0.5">
+                          <AlertCircleIcon className="h-3.5 w-3.5" />
+                          <span>Explanation:</span>
+                        </div>
+                        <p className="text-text-muted leading-relaxed">{q.explanation}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -400,8 +525,10 @@ export function TeacherQuizDetails() {
       {/* Student Attempts Section */}
       <section className="rounded-xl border border-border bg-surface p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Student Attempts</h2>
-          <span className="text-xs text-text-muted">{attempts.length} total</span>
+          <div>
+            <h2 className="text-lg font-semibold text-text">Student Attempts</h2>
+            <p className="text-xs text-text-muted">{attempts.length} total attempts submitted</p>
+          </div>
         </div>
 
         {attempts.length === 0 ? (
@@ -415,12 +542,27 @@ export function TeacherQuizDetails() {
             <table className="w-full min-w-[640px] divide-y divide-border">
               <thead>
                 <tr className="bg-background">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Student</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Attempt</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Score</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Percentage</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Submitted</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Student
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Attempt
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Score
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Percentage
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Submitted
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
@@ -432,7 +574,9 @@ export function TeacherQuizDetails() {
                           {attempt.studentId?.fullName?.charAt(0).toUpperCase() || 'S'}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-text truncate">{attempt.studentId?.fullName}</p>
+                          <p className="text-sm font-medium text-text truncate">
+                            {attempt.studentId?.fullName}
+                          </p>
                           <p className="text-xs text-text-muted truncate">{attempt.studentId?.email}</p>
                         </div>
                       </div>
@@ -456,7 +600,23 @@ export function TeacherQuizDetails() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-text-muted">{formatDateTime(attempt.submittedAt || attempt.startedAt)}</td>
+                    <td className="px-4 py-3 text-sm text-text-muted">
+                      {formatDateTime(attempt.submittedAt || attempt.startedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {attempt.status === 'submitted' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          loading={loadingReviewId === attempt._id}
+                          onClick={() => handleOpenAttemptReview(attempt._id)}
+                        >
+                          Review
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-text-muted">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -465,13 +625,22 @@ export function TeacherQuizDetails() {
         )}
       </section>
 
-      {/* Question Modal */}
+      {/* Question Create/Edit Modal */}
       {isQuestionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-text mb-4">
-              {editingQuestion ? 'Edit Question' : 'Add MCQ Question'}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-text">
+                {editingQuestion ? 'Edit Question' : 'Add MCQ Question'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsQuestionModalOpen(false)}
+                className="text-text-muted hover:text-text p-1"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleSaveQuestion} className="space-y-4">
               <div>
@@ -482,7 +651,9 @@ export function TeacherQuizDetails() {
                   required
                   rows={2}
                   value={questionForm.questionText}
-                  onChange={(e) => setQuestionForm({ ...questionForm, questionText: e.target.value })}
+                  onChange={(e) =>
+                    setQuestionForm({ ...questionForm, questionText: e.target.value })
+                  }
                   placeholder="Type the question here..."
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
@@ -490,28 +661,28 @@ export function TeacherQuizDetails() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-text-muted mb-1">
-                    Marks *
-                  </label>
+                  <label className="block text-xs font-medium text-text-muted mb-1">Marks *</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={questionForm.marks}
-                    onChange={(e) => setQuestionForm({ ...questionForm, marks: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setQuestionForm({ ...questionForm, marks: Number(e.target.value) })
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-text-muted mb-1">
-                    Order *
-                  </label>
+                  <label className="block text-xs font-medium text-text-muted mb-1">Order *</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={questionForm.order}
-                    onChange={(e) => setQuestionForm({ ...questionForm, order: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setQuestionForm({ ...questionForm, order: Number(e.target.value) })
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
                 </div>
@@ -565,7 +736,9 @@ export function TeacherQuizDetails() {
                 </label>
                 <select
                   value={questionForm.correctAnswer}
-                  onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
+                  onChange={(e) =>
+                    setQuestionForm({ ...questionForm, correctAnswer: e.target.value })
+                  }
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {questionForm.options.map((opt) => (
@@ -574,6 +747,21 @@ export function TeacherQuizDetails() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Explanation / Solution Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={questionForm.explanation}
+                  onChange={(e) =>
+                    setQuestionForm({ ...questionForm, explanation: e.target.value })
+                  }
+                  placeholder="Explain why this option is correct. Students can see this after submitting their quiz."
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3">
@@ -585,11 +773,7 @@ export function TeacherQuizDetails() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={savingQuestion}
-                >
+                <Button type="submit" variant="primary" loading={savingQuestion}>
                   {editingQuestion ? 'Update Question' : 'Add Question'}
                 </Button>
               </div>
@@ -597,11 +781,159 @@ export function TeacherQuizDetails() {
           </div>
         </div>
       )}
+
+      {/* Teacher Student Attempt Review Modal */}
+      {reviewAttempt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl">
+            <div className="flex items-start justify-between border-b border-border pb-4 mb-5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-text">
+                    Attempt #{reviewAttempt.attempt.attemptNumber} Review
+                  </h3>
+                  <Badge variant={reviewAttempt.attempt.passed ? 'success' : 'error'}>
+                    {reviewAttempt.attempt.passed ? 'Passed' : 'Failed'}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-text-muted">
+                  Student:{' '}
+                  <strong className="text-text">
+                    {reviewAttempt.attempt.studentId?.fullName || 'Student'}
+                  </strong>{' '}
+                  ({reviewAttempt.attempt.studentId?.email}) · Submitted{' '}
+                  {reviewAttempt.attempt.submittedAt
+                    ? formatDateTime(reviewAttempt.attempt.submittedAt)
+                    : 'N/A'}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-text">
+                  Score: {reviewAttempt.attempt.score} / {reviewAttempt.attempt.totalMarks} (
+                  {reviewAttempt.attempt.percentage}%)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReviewAttempt(null)}
+                className="text-text-muted hover:text-text p-1"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {reviewAttempt.reviewQuestions.map((q: any, idx: number) => {
+                const isCorrect = q.isCorrect
+                const isAnswered = q.studentSelectedOption !== null
+
+                return (
+                  <div
+                    key={q._id}
+                    className={`rounded-xl border p-4 text-xs ${
+                      !isAnswered
+                        ? 'border-border bg-background'
+                        : isCorrect
+                        ? 'border-success/30 bg-success/5'
+                        : 'border-error/30 bg-error/5'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface border border-border text-[10px] font-bold text-text">
+                          {idx + 1}
+                        </span>
+                        <p className="font-semibold text-text text-sm">{q.questionText}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-text-muted">
+                          {q.marksEarned} / {q.marks} mark{q.marks === 1 ? '' : 's'}
+                        </span>
+                        {isCorrect ? (
+                          <Badge variant="success">Correct</Badge>
+                        ) : isAnswered ? (
+                          <Badge variant="error">Wrong</Badge>
+                        ) : (
+                          <Badge variant="neutral">Unanswered</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 space-y-1.5">
+                      {q.options.map((opt: any) => {
+                        const isOptionCorrect = opt.key === q.correctAnswer
+                        const isStudentChoice = opt.key === q.studentSelectedOption
+
+                        let style = 'border-border bg-surface text-text'
+                        if (isOptionCorrect) {
+                          style = 'border-success bg-success/15 text-success font-medium'
+                        } else if (isStudentChoice && !isCorrect) {
+                          style = 'border-error bg-error/15 text-error font-medium'
+                        }
+
+                        return (
+                          <div
+                            key={opt.key}
+                            className={`flex items-center justify-between rounded-lg border p-2 text-xs ${style}`}
+                          >
+                            <span>
+                              <strong>{opt.key}.</strong> {opt.text}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {isStudentChoice && (
+                                <span
+                                  className={`rounded px-1 py-0.5 text-[10px] font-medium ${
+                                    isCorrect
+                                      ? 'bg-success/20 text-success'
+                                      : 'bg-error/20 text-error'
+                                  }`}
+                                >
+                                  Student answer
+                                </span>
+                              )}
+                              {isOptionCorrect && (
+                                <span className="rounded bg-success/20 px-1 py-0.5 text-[10px] font-medium text-success">
+                                  Correct key
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {q.explanation && (
+                      <div className="mt-2.5 rounded border border-primary/20 bg-primary/5 p-2 text-[11px] text-text-muted">
+                        <strong className="text-primary mr-1">Explanation:</strong>
+                        {q.explanation}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setReviewAttempt(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function StatCard({ label, value, icon, badge }: { label: string; value: string; icon: React.ReactNode; badge?: boolean }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  badge,
+}: {
+  label: string
+  value: string
+  icon: React.ReactNode
+  badge?: boolean
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface p-5">
       <div className="flex items-center gap-3">
@@ -611,7 +943,9 @@ function StatCard({ label, value, icon, badge }: { label: string; value: string;
         <div>
           <p className="text-xs text-text-muted">{label}</p>
           {badge ? (
-            <Badge variant={getStatusVariant(value)} className="capitalize mt-1">{value}</Badge>
+            <Badge variant={getStatusVariant(value)} className="capitalize mt-1">
+              {value}
+            </Badge>
           ) : (
             <p className="text-xl font-bold text-text">{value}</p>
           )}
@@ -621,7 +955,9 @@ function StatCard({ label, value, icon, badge }: { label: string; value: string;
   )
 }
 
-function getAttemptStatusVariant(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
+function getAttemptStatusVariant(
+  status: string
+): 'default' | 'primary' | 'success' | 'warning' | 'error' {
   switch (status) {
     case 'submitted':
       return 'success'
@@ -633,4 +969,5 @@ function getAttemptStatusVariant(status: string): 'default' | 'primary' | 'succe
       return 'default'
   }
 }
+
 
