@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +26,7 @@ export function TeacherQuizForm({
   defaultClassId,
   defaultCourseId,
 }: TeacherQuizFormProps) {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [classes, setClasses] = useState<TeacherClass[]>([])
   const [formData, setFormData] = useState({
@@ -111,17 +113,52 @@ export function TeacherQuizForm({
       if (quiz) {
         await teacherApi.updateQuiz(quiz._id, payload)
         toast.success('Quiz updated successfully')
+        onSuccess()
       } else {
-        await teacherApi.createQuiz(payload as CreateQuizPayload)
-        toast.success('Quiz created successfully')
+        const createdQuiz = await teacherApi.createQuiz(payload as CreateQuizPayload)
+        toast.success('Quiz created! Redirecting to add questions...')
+        onClose()
+        onSuccess()
+        if (createdQuiz?._id) {
+          navigate(`/teacher/quizzes/${createdQuiz._id}`)
+        }
       }
-      onSuccess()
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to save quiz.'
       toast.error(message)
     } finally {
       setLoading(false)
     }
+  }
+
+  const courseOptions = Array.from(
+    new Map(
+      classes
+        .filter((c) => c.courseId?._id)
+        .map((c) => [c.courseId._id, { value: c.courseId._id, label: c.courseId.title || 'Unknown' }])
+    ).values()
+  )
+
+  const classOptions = classes
+    .filter((c) => !formData.courseId || c.courseId?._id === formData.courseId)
+    .map((c) => ({ value: c._id, label: `${c.batchName} (${c.courseId?.title || 'Course'})` }))
+
+  const handleCourseChange = (newCourseId: string) => {
+    const isValidClass = classes.some((c) => c._id === formData.classId && c.courseId?._id === newCourseId)
+    setFormData((prev) => ({
+      ...prev,
+      courseId: newCourseId,
+      classId: isValidClass ? prev.classId : '',
+    }))
+  }
+
+  const handleClassChange = (newClassId: string) => {
+    const selected = classes.find((c) => c._id === newClassId)
+    setFormData((prev) => ({
+      ...prev,
+      classId: newClassId,
+      courseId: selected?.courseId?._id || prev.courseId,
+    }))
   }
 
   return (
@@ -131,17 +168,17 @@ export function TeacherQuizForm({
           label="Course"
           required
           value={formData.courseId}
-          onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
-          options={classes.map((c) => ({ value: c.courseId?._id || '', label: c.courseId?.title || 'Unknown' }))}
+          onChange={(e) => handleCourseChange(e.target.value)}
+          options={courseOptions}
           placeholder="Select course"
         />
         <Select
           label="Class"
           required
           value={formData.classId}
-          onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
-          options={classes.map((c) => ({ value: c._id, label: `${c.batchName} (${c.courseId?.title || 'Course'})` }))}
-          placeholder="Select class"
+          onChange={(e) => handleClassChange(e.target.value)}
+          options={classOptions}
+          placeholder={formData.courseId ? "Select class" : "Select a course first"}
         />
         <Input
           label="Title"

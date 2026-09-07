@@ -1,7 +1,6 @@
-import { Badge } from '@/components'
+import { Badge, AttachmentCard } from '@/components'
 import { ClockIcon, CheckCircleIcon, AlertCircleIcon, AwardIcon } from '@/components/ui/icons'
 import type { Submission } from '@/types/submission'
-import { getSafeExternalUrl } from '@/utils'
 
 function formatDate(dateString: string) {
   if (!dateString) return 'N/A'
@@ -53,7 +52,6 @@ export function SubmissionStatus({ submission }: SubmissionStatusProps) {
   const isGraded = submission.status === 'graded'
   const hasMarks = submission.marks !== null && submission.marks !== undefined
   const hasFeedback = submission.feedback && submission.feedback.trim().length > 0
-  const attachmentUrl = getSafeExternalUrl(submission.attachmentUrl)
 
   return (
     <div className="rounded-xl border border-border bg-background p-5 sm:p-6">
@@ -80,17 +78,9 @@ export function SubmissionStatus({ submission }: SubmissionStatusProps) {
           </div>
         )}
 
-        {attachmentUrl && (
+        {submission.attachmentUrl && (
           <div>
-            <p className="text-xs text-text-muted">Attachment</p>
-            <a
-              href={attachmentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1.5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
-            >
-              View Submitted File
-            </a>
+            <AttachmentCard url={submission.attachmentUrl} label="Submitted File" />
           </div>
         )}
 

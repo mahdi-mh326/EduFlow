@@ -374,6 +374,23 @@ export function TeacherQuizDetails() {
         </div>
       </div>
 
+      {quiz.status === 'draft' && questions.length === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 text-sm text-text">
+          <div className="flex items-start gap-3">
+            <AlertCircleIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-text">Step 2: Add Questions to this Quiz</p>
+              <p className="text-xs text-text-muted mt-0.5">
+                This quiz was created in draft mode. Click &ldquo;Add Question&rdquo; below to add multiple choice questions. Once you are finished, click &ldquo;Publish Quiz&rdquo; above so enrolled students can take the exam.
+              </p>
+            </div>
+          </div>
+          <Button variant="primary" size="sm" onClick={openAddQuestion} className="shrink-0 self-start sm:self-center">
+            Add First Question
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Status" value={quiz.status || 'N/A'} icon={<FileTextIcon className="h-5 w-5 text-primary" />} badge />
         <StatCard label="Questions" value={questions.length.toString()} icon={<BookOpenIcon className="h-5 w-5 text-secondary" />} />

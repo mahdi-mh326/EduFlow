@@ -253,7 +253,7 @@ export function TeacherQuizzes() {
               <div className="mt-auto flex items-center gap-2">
                 <Link to={`/teacher/quizzes/${quiz._id}`} className="flex-1">
                   <Button variant="outline" size="sm" className="w-full">
-                    View Details
+                    Manage Questions & Details
                   </Button>
                 </Link>
                 <Button variant="ghost" size="sm" onClick={() => handleEdit(quiz)} aria-label="Edit quiz">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { Button, Badge, Skeleton, EmptyState, ErrorState } from '@/components'
+import { Button, Badge, Skeleton, EmptyState, ErrorState, AttachmentCard } from '@/components'
 import { teacherApi } from '@/services/api/teacher'
 import {
   BookOpenIcon,
@@ -12,7 +12,6 @@ import {
   FileTextIcon,
 } from '@/components/ui/icons'
 import type { TeacherAssignment, TeacherSubmission } from '@/types/teacher'
-import { getSafeExternalUrl } from '@/utils'
 
 function formatDate(dateString: string) {
   if (!dateString) return 'N/A'
@@ -190,7 +189,6 @@ export function TeacherAssignmentDetails() {
     )
   }
 
-  const attachmentUrl = getSafeExternalUrl(assignment.attachmentUrl)
   const backUrl = assignment.classId?._id ? `/teacher/classes/${assignment.classId._id}` : '/teacher/classes'
 
   const pendingSubmissions = submissions.filter((s) => s.status !== 'graded')
@@ -247,12 +245,12 @@ export function TeacherAssignmentDetails() {
               <p className="text-sm text-text whitespace-pre-wrap">{assignment.instructions}</p>
             </div>
           )}
-          {attachmentUrl && (
+          {assignment.attachmentUrl && (
             <div>
-              <p className="text-xs text-text-muted mb-1">Attachment</p>
-              <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                {attachmentUrl}
-              </a>
+              <AttachmentCard
+                url={assignment.attachmentUrl}
+                label="Assignment File / Questions"
+              />
             </div>
           )}
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -416,16 +414,11 @@ export function TeacherAssignmentDetails() {
             )}
 
             {gradingSubmission.attachmentUrl && (
-              <div className="mb-4 rounded-lg border border-border bg-background p-3">
-                <p className="text-xs font-medium text-text-muted mb-1">Attachment</p>
-                <a
-                  href={getSafeExternalUrl(gradingSubmission.attachmentUrl) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline break-all"
-                >
-                  {gradingSubmission.attachmentUrl}
-                </a>
+              <div className="mb-4">
+                <AttachmentCard
+                  url={gradingSubmission.attachmentUrl}
+                  label="Student's Attached Submission"
+                />
               </div>
             )}
 

@@ -19,4 +19,6 @@ router.post(
   UploadController.uploadFile
 );
 
+router.get("/file-proxy", UploadController.proxyFile);
+
 export default router;

@@ -114,6 +114,36 @@ export function TeacherAssignmentForm({
     }
   }
 
+  const courseOptions = Array.from(
+    new Map(
+      classes
+        .filter((c) => c.courseId?._id)
+        .map((c) => [c.courseId._id, { value: c.courseId._id, label: c.courseId.title || 'Unknown' }])
+    ).values()
+  )
+
+  const classOptions = classes
+    .filter((c) => !formData.courseId || c.courseId?._id === formData.courseId)
+    .map((c) => ({ value: c._id, label: `${c.batchName} (${c.courseId?.title || 'Course'})` }))
+
+  const handleCourseChange = (newCourseId: string) => {
+    const isValidClass = classes.some((c) => c._id === formData.classId && c.courseId?._id === newCourseId)
+    setFormData((prev) => ({
+      ...prev,
+      courseId: newCourseId,
+      classId: isValidClass ? prev.classId : '',
+    }))
+  }
+
+  const handleClassChange = (newClassId: string) => {
+    const selected = classes.find((c) => c._id === newClassId)
+    setFormData((prev) => ({
+      ...prev,
+      classId: newClassId,
+      courseId: selected?.courseId?._id || prev.courseId,
+    }))
+  }
+
   return (
     <Modal open={open} onClose={onClose} title={assignment ? 'Edit Assignment' : 'Create Assignment'} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,17 +151,17 @@ export function TeacherAssignmentForm({
           label="Course"
           required
           value={formData.courseId}
-          onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
-          options={classes.map((c) => ({ value: c.courseId?._id || '', label: c.courseId?.title || 'Unknown' }))}
+          onChange={(e) => handleCourseChange(e.target.value)}
+          options={courseOptions}
           placeholder="Select course"
         />
         <Select
           label="Class"
           required
           value={formData.classId}
-          onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
-          options={classes.map((c) => ({ value: c._id, label: `${c.batchName} (${c.courseId?.title || 'Course'})` }))}
-          placeholder="Select class"
+          onChange={(e) => handleClassChange(e.target.value)}
+          options={classOptions}
+          placeholder={formData.courseId ? "Select class" : "Select a course first"}
         />
         <Input
           label="Title"

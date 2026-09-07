@@ -63,7 +63,11 @@ const createAssignment = async (payload, createdBy, callerRole) => {
   const { courseId, classId, teacherId, title, description, instructions, attachmentUrl, dueDate, totalMarks, status } = payload;
 
   await validateCourse(courseId);
-  await validateClass(classId);
+  const cls = await validateClass(classId);
+
+  if (cls.courseId.toString() !== courseId.toString()) {
+    throw new ApiError(400, "The selected class does not belong to the selected course.");
+  }
 
   if (callerRole === USER_ROLE.TEACHER) {
     const isOwnClass = await Class.findOne({
@@ -228,6 +232,15 @@ const updateAssignment = async (id, payload, userId, userRole) => {
 
   if (payload.dueDate && new Date(payload.dueDate) <= new Date()) {
     throw new ApiError(400, ASSIGNMENT_MESSAGES.INVALID_DUE_DATE);
+  }
+
+  if (payload.courseId || payload.classId) {
+    const targetCourseId = (payload.courseId || assignment.courseId).toString();
+    const targetClassId = (payload.classId || assignment.classId).toString();
+    const cls = await validateClass(targetClassId);
+    if (cls.courseId.toString() !== targetCourseId) {
+      throw new ApiError(400, "The selected class does not belong to the selected course.");
+    }
   }
 
   const updatedAssignment = await Assignment.findByIdAndUpdate(

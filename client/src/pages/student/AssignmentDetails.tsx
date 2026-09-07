@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Button, Badge, Skeleton, EmptyState, ErrorState, Container } from '@/components'
+import { Button, Badge, Skeleton, EmptyState, ErrorState, Container, AttachmentCard } from '@/components'
 import { assignmentApi } from '@/services/api/assignment'
 import { submissionApi } from '@/services/api/submission'
 import { SubmissionForm, SubmissionStatus } from '@/components/submission'
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/icons'
 import type { Assignment } from '@/types/assignment'
 import type { Submission } from '@/types/submission'
-import { getSafeExternalUrl } from '@/utils'
 
 function formatDate(dateString: string) {
   if (!dateString) return 'N/A'
@@ -277,7 +276,6 @@ export function AssignmentDetails() {
 
   const course = assignment.courseId
   const cls = assignment.classId
-  const attachmentUrl = getSafeExternalUrl(assignment.attachmentUrl)
   const statusBadge = mapAssignmentStatusBadge(assignment.status)
   const dueDateInfo = getDueDateLabel(assignment.dueDate)
   const deadlinePassed = isDeadlinePassed(assignment.dueDate)
@@ -350,17 +348,9 @@ export function AssignmentDetails() {
           </div>
         )}
 
-        {attachmentUrl && (
+        {assignment.attachmentUrl && (
           <div className="mt-4">
-            <a
-              href={attachmentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
-            >
-              <FileTextIcon className="h-4 w-4" />
-              View Attachment
-            </a>
+            <AttachmentCard url={assignment.attachmentUrl} label="Assignment File / Questions" />
           </div>
         )}
 

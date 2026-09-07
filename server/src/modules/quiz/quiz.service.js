@@ -65,7 +65,11 @@ const createQuiz = async (payload, createdBy, callerRole) => {
   const { courseId, classId, title, description, instructions, durationMinutes, totalMarks, passingMarks, startDate, endDate, attemptLimit, status } = payload;
 
   await validateCourse(courseId);
-  await validateClass(classId);
+  const cls = await validateClass(classId);
+
+  if (cls.courseId.toString() !== courseId.toString()) {
+    throw new ApiError(400, "The selected class does not belong to the selected course.");
+  }
 
   if (callerRole === USER_ROLE.TEACHER) {
     const isOwnClass = await Class.findOne({
@@ -236,6 +240,16 @@ const updateQuiz = async (id, payload, userId, userRole) => {
   if (userRole === USER_ROLE.TEACHER) {
     if (quiz.teacherId.toString() !== userId.toString()) {
       throw new ApiError(403, QUIZ_MESSAGES.UNAUTHORIZED_TEACHER);
+    }
+  }
+
+  if (payload.courseId || payload.classId) {
+    const targetCourseId = (payload.courseId || quiz.courseId).toString();
+    const targetClassId = (payload.classId || quiz.classId).toString();
+    await validateCourse(targetCourseId);
+    const cls = await validateClass(targetClassId);
+    if (cls.courseId.toString() !== targetCourseId) {
+      throw new ApiError(400, "The selected class does not belong to the selected course.");
     }
   }
 

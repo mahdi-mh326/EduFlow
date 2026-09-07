@@ -22,3 +22,4 @@ export { NotificationBell, NotificationDropdown, NotificationItem } from './noti
 export { ChatbotButton, ChatbotPanel, ChatMessage, ChatInput } from './chatbot'
 export { SubmissionForm, SubmissionStatus } from './submission'
 export { FileUploadDropzone } from './ui/FileUploadDropzone'
+export { AttachmentCard } from './ui/AttachmentCard'
