@@ -12,7 +12,7 @@ import { courseApi } from '@/services/api/course'
 import { assignmentApi } from '@/services/api/assignment'
 import { quizApi } from '@/services/api/quiz'
 import { studentApi } from '@/services/api/student'
-import { getAvatarUrl } from '@/utils'
+import { getAvatarUrl, getFileProxyUrl, getSafeExternalUrl } from '@/utils'
 import {
   BookOpenIcon,
   UsersIcon,
@@ -681,16 +681,41 @@ export function StudentClassDetails() {
                       <span className="text-text-muted">
                         Uploaded by: <span className="font-semibold text-text">{mat.teacherId?.fullName || 'Teacher'}</span>
                       </span>
-                      {mat.fileUrl && (
-                        <a
-                          href={mat.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
-                        >
-                          Download / Open ↗
-                        </a>
-                      )}
+                      {mat.fileUrl && (() => {
+                        const isLink = mat.fileType === 'link' || mat.fileType === 'video' || mat.fileUrl.includes('youtube.com') || mat.fileUrl.includes('youtu.be') || mat.fileUrl.includes('drive.google.com')
+                        if (isLink) {
+                          return (
+                            <a
+                              href={getSafeExternalUrl(mat.fileUrl) || undefined}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
+                            >
+                              {mat.fileType === 'video' ? 'Watch Video ↗' : 'Open Link ↗'}
+                            </a>
+                          )
+                        }
+                        return (
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={getFileProxyUrl(mat.fileUrl, mat.title, false, mat.fileType)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                            >
+                              Preview
+                            </a>
+                            <span className="text-border">|</span>
+                            <a
+                              href={getFileProxyUrl(mat.fileUrl, mat.title, true, mat.fileType)}
+                              download
+                              className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 ))}

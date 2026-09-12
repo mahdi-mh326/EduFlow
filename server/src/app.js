@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -72,7 +73,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
 
-const uploadsPath = path.join(process.cwd(), "public", "uploads");
+const __serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const uploadsPath = path.join(__serverRoot, "public", "uploads");
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }

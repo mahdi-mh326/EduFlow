@@ -3,39 +3,38 @@ import { MATERIAL_VISIBILITY } from "./material.constant.js";
 
 const createMaterialSchema = z.object({
   body: z.object({
-    courseId: z.string().min(1, "Course is required"),
+    courseId: z.string().optional().or(z.literal("")),
     classId: z.string().min(1, "Class is required"),
-    teacherId: z.string().min(1, "Teacher is required").optional(),
+    teacherId: z.string().optional().or(z.literal("")),
     title: z
       .string()
       .min(1, "Title is required")
       .max(200, "Title must be at most 200 characters")
       .trim(),
-    description: z.string().trim().optional(),
+    description: z.string().trim().optional().or(z.literal("")),
     fileUrl: z.string().min(1, "File URL is required"),
-    fileType: z.string().min(1, "File type is required"),
-    visibility: z.enum(Object.values(MATERIAL_VISIBILITY)).optional(),
+    fileType: z.string().optional().or(z.literal("")),
+    visibility: z.enum(Object.values(MATERIAL_VISIBILITY)).optional().or(z.literal("")),
   }),
 });
 
 const updateMaterialSchema = z.object({
   body: z
     .object({
-      courseId: z.string().min(1, "Course is required").optional(),
-      classId: z.string().min(1, "Class is required").optional(),
-      teacherId: z.string().min(1, "Teacher is required").optional(),
+      courseId: z.string().optional().or(z.literal("")),
+      classId: z.string().optional().or(z.literal("")),
+      teacherId: z.string().optional().or(z.literal("")),
       title: z
         .string()
         .min(1, "Title is required")
         .max(200, "Title must be at most 200 characters")
         .trim()
         .optional(),
-      description: z.string().trim().optional(),
+      description: z.string().trim().optional().or(z.literal("")),
       fileUrl: z.string().min(1, "File URL is required").optional(),
-      fileType: z.string().min(1, "File type is required").optional(),
-      visibility: z.enum(Object.values(MATERIAL_VISIBILITY)).optional(),
+      fileType: z.string().optional().or(z.literal("")),
+      visibility: z.enum(Object.values(MATERIAL_VISIBILITY)).optional().or(z.literal("")),
     })
-    .strict()
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update.",
     }),

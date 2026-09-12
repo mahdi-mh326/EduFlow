@@ -76,6 +76,29 @@ const getAllCertificates = catchAsync(async (req, res) => {
   });
 });
 
+const revokeCertificate = catchAsync(async (req, res) => {
+  const { reason } = req.body;
+  const result = await CertificateService.revokeCertificate(req.params.id, reason);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Certificate revoked successfully.",
+    data: result,
+  });
+});
+
+const restoreCertificate = catchAsync(async (req, res) => {
+  const result = await CertificateService.restoreCertificate(req.params.id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Certificate restored successfully.",
+    data: result,
+  });
+});
+
 export const CertificateController = {
   claimCertificate,
   getMyCertificates,
@@ -83,4 +106,6 @@ export const CertificateController = {
   getStudentProgress,
   verifyCertificate,
   getAllCertificates,
+  revokeCertificate,
+  restoreCertificate,
 };

@@ -21,20 +21,24 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
 
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+
   useEffect(() => {
     if (!open) return
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    closeButtonRef.current?.focus()
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', handleKey)
     return () => {
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = previousOverflow
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 

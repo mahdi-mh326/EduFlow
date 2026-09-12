@@ -10,6 +10,7 @@ import {
   ClipboardCheckIcon,
   TimerIcon,
   CheckCircleIcon,
+  LockIcon,
 } from '@/components/ui/icons'
 import { certificateApi } from '@/services/api/certificate'
 import { enrollmentApi } from '@/services/api/enrollment'
@@ -208,6 +209,7 @@ export function StudentCertificates() {
               const progress = progressMap[String(classId)]
               const hasCert = certificates.some((c) => String((c.classId as any)?._id || c.classId) === String(classId))
               const percent = progress?.percentage || 0
+              const classStatus = progress?.classStatus || enrollment.classId?.status || 'ongoing'
 
               return (
                 <div
@@ -218,10 +220,25 @@ export function StudentCertificates() {
                     <div className="space-y-3 flex-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="text-base font-bold text-text">
-                            {enrollment.courseId?.title}
-                          </h4>
-                          <p className="text-xs text-text-muted">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-base font-bold text-text">
+                              {enrollment.courseId?.title}
+                            </h4>
+                            {classStatus === 'completed' ? (
+                              <Badge variant="primary" className="text-[10px] uppercase font-bold tracking-wider">
+                                Completed
+                              </Badge>
+                            ) : classStatus === 'upcoming' ? (
+                              <Badge variant="default" className="text-[10px] uppercase font-bold tracking-wider">
+                                Upcoming
+                              </Badge>
+                            ) : (
+                              <Badge variant="warning" className="text-[10px] uppercase font-bold tracking-wider">
+                                Ongoing
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-muted mt-0.5">
                             Batch: {enrollment.classId?.batchName || 'Assigned Batch'}
                           </p>
                         </div>
@@ -260,12 +277,28 @@ export function StudentCertificates() {
                           <span>Quizzes: <strong>{progress?.breakdown.quizzes.attempted || 0}/{progress?.breakdown.quizzes.total || 0}</strong></span>
                         </span>
                       </div>
+
+                      {/* Eligibility Notice */}
+                      {!hasCert && progress?.eligibilityMessage && (
+                        <div className={`mt-2 flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs border ${
+                          progress?.isEligibleForCertificate
+                            ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+                            : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                        }`}>
+                          {progress?.isEligibleForCertificate ? (
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-600 shrink-0" />
+                          ) : (
+                            <LockIcon className="h-4 w-4 text-amber-600 shrink-0" />
+                          )}
+                          <span>{progress.eligibilityMessage}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action */}
-                    <div className="shrink-0 flex items-center gap-3 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
+                    <div className="shrink-0 flex flex-col items-stretch sm:items-end justify-center gap-2 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 min-w-[170px]">
                       {hasCert ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-xl bg-success/10 px-3.5 py-2 text-xs font-bold text-success border border-success/20">
+                        <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-success/10 px-3.5 py-2 text-xs font-bold text-success border border-success/20">
                           <CheckCircleIcon className="h-3.5 w-3.5" />
                           <span>Certificate Claimed</span>
                         </span>
@@ -274,17 +307,29 @@ export function StudentCertificates() {
                           variant="primary"
                           onClick={() => handleClaim(String(classId))}
                           loading={claimingClassId === String(classId)}
-                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold inline-flex items-center gap-1.5"
+                          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold inline-flex items-center justify-center gap-1.5 shadow-sm"
                         >
                           <AwardIcon className="h-4 w-4" />
                           <span>Claim Certificate</span>
                         </Button>
                       ) : (
-                        <Link to={`/student/classes/${classId}`}>
-                          <Button variant="outline" size="sm">
-                            Continue Learning →
+                        <div className="flex flex-col items-center sm:items-end gap-1.5 w-full">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="w-full opacity-60 cursor-not-allowed inline-flex items-center justify-center gap-1.5 text-xs text-text-muted"
+                            title={progress?.eligibilityMessage}
+                          >
+                            <LockIcon className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Certificate Locked</span>
                           </Button>
-                        </Link>
+                          <Link to={`/student/classes/${classId}`}>
+                            <span className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-0.5">
+                              Continue Learning →
+                            </span>
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </div>

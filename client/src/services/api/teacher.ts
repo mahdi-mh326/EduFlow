@@ -233,8 +233,8 @@ export const teacherApi = {
     return data.data
   },
 
-  getMaterials: async (): Promise<{ data: any[] }> => {
-    const { data } = await apiClient.get('/materials')
+  getMaterials: async (params?: { courseId?: string; classId?: string; fileType?: string; search?: string }): Promise<{ data: any[] }> => {
+    const { data } = await apiClient.get('/materials', { params })
     return data
   },
 
@@ -245,8 +245,14 @@ export const teacherApi = {
     description?: string
     fileUrl?: string
     fileType?: string
+    visibility?: string
   }) => {
     const { data } = await apiClient.post('/materials', payload)
+    return data.data
+  },
+
+  updateMaterial: async (id: string, payload: any) => {
+    const { data } = await apiClient.patch(`/materials/${id}`, payload)
     return data.data
   },
 

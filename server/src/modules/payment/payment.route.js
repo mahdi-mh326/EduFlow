@@ -47,6 +47,7 @@ router.get(
 router.use(authenticate, authorize(USER_ROLE.ADMIN));
 
 router.get("/", PaymentController.getPayments);
+router.patch("/:id/status", PaymentController.updatePaymentStatus);
 
 export default router;
 

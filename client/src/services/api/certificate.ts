@@ -28,8 +28,18 @@ export const certificateApi = {
     return response.data.data
   },
 
-  getAllCertificates: async (): Promise<Certificate[]> => {
-    const response = await apiClient.get('/certificates')
+  getAllCertificates: async (params?: { courseId?: string }): Promise<Certificate[]> => {
+    const response = await apiClient.get('/certificates', { params })
+    return response.data.data
+  },
+
+  revokeCertificate: async (id: string, reason?: string): Promise<Certificate> => {
+    const response = await apiClient.patch(`/certificates/${id}/revoke`, { reason })
+    return response.data.data
+  },
+
+  restoreCertificate: async (id: string): Promise<Certificate> => {
+    const response = await apiClient.patch(`/certificates/${id}/restore`)
     return response.data.data
   },
 }

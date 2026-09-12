@@ -1,5 +1,5 @@
 import { FileTextIcon, DownloadIcon, ExternalLinkIcon } from '@/components/ui/icons'
-import { getFileProxyUrl } from '@/utils/url'
+import { getFileProxyUrl, getSafeExternalUrl } from '@/utils'
 
 interface AttachmentCardProps {
   url: string
@@ -9,26 +9,40 @@ interface AttachmentCardProps {
 }
 
 function extractFilename(url: string, fallback?: string): string {
-  if (fallback) return fallback
+  if (fallback && fallback.includes('.')) return fallback
   try {
     const pathname = new URL(url).pathname
-    const base = pathname.split('/').pop()
-    if (base && base.length > 0 && !base.match(/^[a-z0-9]{20,}$/i)) {
-      return decodeURIComponent(base)
+    const raw = pathname.split('/').pop()
+    if (raw && raw.length > 0) {
+      const decoded = decodeURIComponent(raw)
+      // If it looks like a clean filename with extension, return it
+      if (decoded.includes('.')) {
+        return decoded
+      }
+      // If no extension but fallback provided, use fallback
+      if (fallback) return fallback
+      return decoded
     }
   } catch {
     // fallback
   }
-  return 'document_attachment'
+  return fallback || 'document_attachment'
 }
 
 export function AttachmentCard({ url, label = 'Attached File', filename, className = '' }: AttachmentCardProps) {
   if (!url) return null
 
+  const isExternalLink =
+    url.includes('youtube.com') ||
+    url.includes('youtu.be') ||
+    url.includes('drive.google.com') ||
+    url.includes('docs.google.com') ||
+    url.includes('dropbox.com')
+
   const resolvedName = extractFilename(url, filename)
   const isPdf = url.toLowerCase().includes('.pdf') || resolvedName.toLowerCase().endsWith('.pdf')
-  const previewUrl = getFileProxyUrl(url, resolvedName, false)
-  const downloadUrl = getFileProxyUrl(url, resolvedName, true)
+  const previewUrl = isExternalLink ? (getSafeExternalUrl(url) || url) : getFileProxyUrl(url, resolvedName, false, isPdf ? 'pdf' : undefined)
+  const downloadUrl = isExternalLink ? (getSafeExternalUrl(url) || url) : getFileProxyUrl(url, resolvedName, true, isPdf ? 'pdf' : undefined)
 
   return (
     <div
@@ -55,17 +69,19 @@ export function AttachmentCard({ url, label = 'Attached File', filename, classNa
           title="Open in browser for viewing"
         >
           <ExternalLinkIcon className="h-3.5 w-3.5" />
-          Preview
+          {isExternalLink ? 'Open Link' : 'Preview'}
         </a>
-        <a
-          href={downloadUrl}
-          download={resolvedName}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text hover:bg-surface-active transition-colors"
-          title="Download file to your device"
-        >
-          <DownloadIcon className="h-3.5 w-3.5" />
-          Download
-        </a>
+        {!isExternalLink && (
+          <a
+            href={downloadUrl}
+            download={resolvedName}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text hover:bg-surface-active transition-colors"
+            title="Download file to your device"
+          >
+            <DownloadIcon className="h-3.5 w-3.5" />
+            Download
+          </a>
+        )}
       </div>
     </div>
   )

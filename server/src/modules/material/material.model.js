@@ -16,7 +16,7 @@ const materialSchema = new mongoose.Schema(
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Teacher is required"],
+      required: false,
     },
     title: {
       type: String,

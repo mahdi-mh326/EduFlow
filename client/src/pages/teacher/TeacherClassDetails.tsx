@@ -15,7 +15,7 @@ import {
 } from '@/components'
 
 import { teacherApi } from '@/services/api/teacher'
-import { getAvatarUrl } from '@/utils'
+import { getAvatarUrl, getFileProxyUrl, getSafeExternalUrl } from '@/utils'
 import { TeacherAssignmentForm } from './TeacherAssignmentForm'
 import { TeacherQuizForm } from './TeacherQuizForm'
 import {
@@ -126,7 +126,7 @@ export function TeacherClassDetails() {
           teacherApi.getActiveClassLive(classId).catch(() => null),
           teacherApi.getAssignments({ classId }).catch(() => ({ data: [] })),
           teacherApi.getQuizzes({ classId }).catch(() => ({ data: [] })),
-          teacherApi.getMaterials().catch(() => ({ data: [] })),
+          teacherApi.getMaterials({ classId }).catch(() => ({ data: [] })),
           teacherApi.getNotices().catch(() => ({ data: [] })),
         ])
 
@@ -151,7 +151,7 @@ export function TeacherClassDetails() {
 
       // Filter materials and notices for this class
       const classMaterials = (materialsRes.data || []).filter(
-        (m: any) => (m.classId?._id || m.classId) === classId
+        (m: any) => String(m.classId?._id || m.classId) === String(classId)
       )
       setMaterials(classMaterials)
 
@@ -263,23 +263,39 @@ export function TeacherClassDetails() {
   // Material Creation
   const handleCreateMaterial = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!classId || !classData) return
+    if (!classId) return
+    if (!materialForm.title.trim()) {
+      toast.error('Please enter a title for the material.')
+      return
+    }
+    if (!materialForm.fileUrl.trim()) {
+      toast.error('Please upload a file or provide a valid file URL.')
+      return
+    }
+
+    const courseId = (classData?.courseId as any)?._id
+      ? String((classData?.courseId as any)._id)
+      : (classData?.courseId ? String(classData.courseId) : '')
+
     setSavingMaterial(true)
     try {
       const newMat = await teacherApi.createMaterial({
-        courseId: (classData.courseId as any)?._id || (classData.courseId as any),
+        courseId,
         classId,
-        title: materialForm.title,
-        description: materialForm.description,
-        fileUrl: materialForm.fileUrl,
-        fileType: materialForm.fileType,
+        title: materialForm.title.trim(),
+        description: materialForm.description?.trim() || '',
+        fileUrl: materialForm.fileUrl.trim(),
+        fileType: materialForm.fileType || 'pdf',
+        visibility: 'public',
       })
-      setMaterials((prev) => [newMat, ...prev])
+      if (newMat) {
+        setMaterials((prev) => [newMat, ...prev])
+      }
       setOpenMaterialModal(false)
       setMaterialForm({ title: '', description: '', fileUrl: '', fileType: 'pdf' })
       toast.success('Material uploaded successfully')
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to upload material')
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload material')
     } finally {
       setSavingMaterial(false)
     }
@@ -751,18 +767,43 @@ export function TeacherClassDetails() {
                     </button>
                   </div>
                   {mat.description && <p className="text-xs text-text-muted">{mat.description}</p>}
-                  {mat.fileUrl && (
-                    <div className="pt-2">
-                      <a
-                        href={mat.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-                      >
-                        Download / Open File ↗
-                      </a>
-                    </div>
-                  )}
+                  {mat.fileUrl && (() => {
+                    const isLink = mat.fileType === 'link' || mat.fileType === 'video' || mat.fileUrl.includes('youtube.com') || mat.fileUrl.includes('youtu.be') || mat.fileUrl.includes('drive.google.com')
+                    if (isLink) {
+                      return (
+                        <div className="pt-2">
+                          <a
+                            href={getSafeExternalUrl(mat.fileUrl) || undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                          >
+                            {mat.fileType === 'video' ? 'Watch Video ↗' : 'Open Link ↗'}
+                          </a>
+                        </div>
+                      )
+                    }
+                    return (
+                      <div className="pt-2 flex items-center gap-3 text-xs font-semibold">
+                        <a
+                          href={getFileProxyUrl(mat.fileUrl, mat.title, false, mat.fileType)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          Preview
+                        </a>
+                        <span className="text-border">|</span>
+                        <a
+                          href={getFileProxyUrl(mat.fileUrl, mat.title, true, mat.fileType)}
+                          download
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          Download
+                        </a>
+                      </div>
+                    )
+                  })()}
                 </div>
               ))}
             </div>
@@ -1011,16 +1052,19 @@ export function TeacherClassDetails() {
       <Modal open={openMaterialModal} onClose={() => setOpenMaterialModal(false)} title="Upload Study Material">
         <form onSubmit={handleCreateMaterial} className="space-y-4">
           <Input
+            id="modal-material-title"
             label="Material Title"
             required
+            autoFocus
             value={materialForm.title}
-            onChange={(e) => setMaterialForm({ ...materialForm, title: e.target.value })}
+            onChange={(e) => setMaterialForm((prev) => ({ ...prev, title: e.target.value }))}
             placeholder="e.g. Lecture 1 - Introduction Slides"
           />
           <TextArea
+            id="modal-material-desc"
             label="Description (Optional)"
             value={materialForm.description}
-            onChange={(e) => setMaterialForm({ ...materialForm, description: e.target.value })}
+            onChange={(e) => setMaterialForm((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Brief details about this material"
           />
           <div className="space-y-2">
@@ -1030,23 +1074,44 @@ export function TeacherClassDetails() {
               folder="eduflow/materials"
               value={materialForm.fileUrl}
               onChange={(url, detectedType) =>
-                setMaterialForm({
-                  ...materialForm,
+                setMaterialForm((prev) => ({
+                  ...prev,
                   fileUrl: url,
                   ...(detectedType ? { fileType: detectedType } : {}),
-                })
+                }))
               }
-              onRemove={() => setMaterialForm({ ...materialForm, fileUrl: '' })}
+              onRemove={() => setMaterialForm((prev) => ({ ...prev, fileUrl: '' }))}
             />
             <div>
               <label className="block text-xs font-medium text-text-muted mb-1">
                 Or Enter File / Resource URL
               </label>
               <Input
+                id="modal-material-url"
                 value={materialForm.fileUrl}
-                onChange={(e) => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
+                onChange={(e) => setMaterialForm((prev) => ({ ...prev, fileUrl: e.target.value }))}
                 placeholder="https://... or link to document"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">
+                File Type
+              </label>
+              <select
+                id="modal-material-type"
+                value={materialForm.fileType}
+                onChange={(e) => setMaterialForm((prev) => ({ ...prev, fileType: e.target.value }))}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value="pdf">PDF Document</option>
+                <option value="video">Video URL</option>
+                <option value="document">Word / Document</option>
+                <option value="link">Resource Link</option>
+                <option value="archive">Archive (ZIP)</option>
+                <option value="image">Image</option>
+                <option value="audio">Audio</option>
+              </select>
             </div>
           </div>
 

@@ -11,6 +11,7 @@ import Quiz from "../quiz/quiz.model.js";
 import QuizAttempt from "../quiz/attempt.model.js";
 import ApiError from "../../shared/ApiError.js";
 import { ENROLLMENT_STATUS, PAYMENT_STATUS } from "../enrollment/enrollment.constant.js";
+import { CLASS_STATUS } from "../class/class.constant.js";
 import { NotificationService } from "../notification/notification.service.js";
 
 const generateCertificateNumber = () => {
@@ -77,18 +78,24 @@ const calculateStudentProgress = async (studentId, classId) => {
   // If totalItems is 0, progress is 0% (NOT 100%!)
   const percentage = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : 0;
 
-  const isUpcoming = cls.status === "upcoming";
-  const isEligible = !isUpcoming && totalItems > 0 && completedItems > 0 && percentage >= 80;
+  const isCompleted = cls.status === CLASS_STATUS.COMPLETED;
+  const isEligible = isCompleted && totalItems > 0 && completedItems > 0 && percentage >= 80;
 
   let eligibilityMessage = "";
-  if (isUpcoming) {
-    eligibilityMessage = "This class has not started yet. Certificate can only be earned once coursework commences.";
+  if (cls.status === CLASS_STATUS.UPCOMING) {
+    eligibilityMessage = "This class has not started yet. Certificates can only be earned once the batch is officially completed.";
+  } else if (cls.status === CLASS_STATUS.ONGOING) {
+    eligibilityMessage = "This class is currently ongoing. Certificates will be available once the batch is marked as completed by the administration.";
+  } else if (cls.status === CLASS_STATUS.CANCELLED) {
+    eligibilityMessage = "This class has been cancelled.";
+  } else if (!isCompleted) {
+    eligibilityMessage = "This class must be marked as completed by the administration before certificates can be claimed.";
   } else if (totalItems === 0) {
-    eligibilityMessage = "Course tasks and live sessions have not been published for this class yet.";
+    eligibilityMessage = "Course tasks and live sessions have not been recorded for this class yet.";
   } else if (completedItems === 0) {
-    eligibilityMessage = "You have not completed any sessions, assignments, or quizzes yet.";
-  } else if (percentage < 80) {
-    eligibilityMessage = `Course completion progress is currently ${percentage}%. You need at least 80% completion to claim your certificate.`;
+    eligibilityMessage = "You have not completed any sessions, assignments, or quizzes for this class.";
+  } else if (percentage < 75) {
+    eligibilityMessage = `Class is marked as completed, but your progress is currently ${percentage}%. You need at least 80% completion to claim your certificate.`;
   }
 
   return {
@@ -141,7 +148,7 @@ const generateCertificate = async (studentId, classId) => {
   if (!progress.isEligibleForCertificate) {
     throw new ApiError(
       400,
-      progress.eligibilityMessage || `Course completion progress is currently ${progress.percentage}%. You need at least 80% completion to claim your certificate.`
+      progress.eligibilityMessage || `Class must be marked as completed by administration and require at least 80% progress to claim your certificate.`
     );
   }
 
@@ -251,13 +258,39 @@ const verifyCertificate = async (certificateNumber) => {
 };
 
 const getAllCertificates = async (query = {}) => {
-  const certificates = await Certificate.find({ isRevoked: { $ne: true } })
+  const { courseId } = query;
+  const filter = {};
+  if (courseId) filter.courseId = courseId;
+
+  const certificates = await Certificate.find(filter)
     .populate("studentId", "fullName email")
     .populate("courseId", "title category")
     .populate("classId", "batchName")
     .sort({ issueDate: -1 });
 
   return certificates;
+};
+
+const revokeCertificate = async (id, reason) => {
+  const certificate = await Certificate.findById(id);
+  if (!certificate) throw new ApiError(404, "Certificate not found");
+
+  certificate.isRevoked = true;
+  certificate.revokedReason = reason || "Revoked by administration";
+  await certificate.save();
+
+  return certificate;
+};
+
+const restoreCertificate = async (id) => {
+  const certificate = await Certificate.findById(id);
+  if (!certificate) throw new ApiError(404, "Certificate not found");
+
+  certificate.isRevoked = false;
+  certificate.revokedReason = null;
+  await certificate.save();
+
+  return certificate;
 };
 
 export const CertificateService = {
@@ -267,4 +300,6 @@ export const CertificateService = {
   getCertificateByClass,
   verifyCertificate,
   getAllCertificates,
+  revokeCertificate,
+  restoreCertificate,
 };

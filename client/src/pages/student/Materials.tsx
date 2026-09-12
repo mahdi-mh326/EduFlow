@@ -8,7 +8,7 @@ import {
   FileTextIcon,
 } from '@/components/ui/icons'
 import type { Material } from '@/types/material'
-import { getSafeExternalUrl } from '@/utils'
+import { getSafeExternalUrl, getFileProxyUrl } from '@/utils'
 
 export function StudentMaterials() {
   const [materials, setMaterials] = useState<Material[]>([])
@@ -194,11 +194,33 @@ export function StudentMaterials() {
 
                 <div className="flex items-center gap-2 shrink-0">
                   {safeUrl ? (
-                    <a href={safeUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="primary" size="sm">
-                        Download / Open
-                      </Button>
-                    </a>
+                    item.fileType === 'link' || item.fileType === 'video' || item.fileUrl.includes('youtube.com') || item.fileUrl.includes('youtu.be') || item.fileUrl.includes('drive.google.com') ? (
+                      <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="primary" size="sm">
+                          {item.fileType === 'video' ? 'Watch Video' : 'Open Link'}
+                        </Button>
+                      </a>
+                    ) : (
+                      <>
+                        <a
+                          href={getFileProxyUrl(item.fileUrl, item.title, false, item.fileType)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline" size="sm">
+                            Preview
+                          </Button>
+                        </a>
+                        <a
+                          href={getFileProxyUrl(item.fileUrl, item.title, true, item.fileType)}
+                          download
+                        >
+                          <Button variant="primary" size="sm">
+                            Download
+                          </Button>
+                        </a>
+                      </>
+                    )
                   ) : (
                     <span className="text-xs text-text-muted">No link</span>
                   )}

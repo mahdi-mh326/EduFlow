@@ -10,6 +10,7 @@ import {
   UsersIcon,
   CalendarIcon,
   ClockIcon,
+  CheckCircleIcon,
 } from '@/components/ui/icons'
 import type { AdminClass } from '@/types/admin'
 import { AdminClassForm } from './AdminClassForm'
@@ -114,6 +115,16 @@ export function AdminClasses() {
     loadClasses(currentPage)
   }
 
+  const handleQuickStatus = async (classId: string, status: AdminClass['status']) => {
+    try {
+      await adminApi.updateClass(classId, { status })
+      toast.success(`Class marked as ${status}`)
+      loadClasses(currentPage)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update class status')
+    }
+  }
+
   if (loading && classes.length === 0) {
     return (
       <Container className="py-8">
@@ -195,6 +206,26 @@ export function AdminClasses() {
                     <Badge variant={cls.status === 'ongoing' ? 'success' : cls.status === 'upcoming' ? 'default' : cls.status === 'completed' ? 'primary' : 'warning'} className="capitalize">
                       {cls.status}
                     </Badge>
+                    {cls.status === 'ongoing' && (
+                      <button
+                        type="button"
+                        onClick={() => handleQuickStatus(cls._id, 'completed')}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                        title="Mark completed to enable student certificate claims"
+                      >
+                        <CheckCircleIcon className="h-3 w-3" />
+                        <span>Mark Completed</span>
+                      </button>
+                    )}
+                    {cls.status === 'upcoming' && (
+                      <button
+                        type="button"
+                        onClick={() => handleQuickStatus(cls._id, 'ongoing')}
+                        className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                      >
+                        <span>Start Batch</span>
+                      </button>
+                    )}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
                     <span className="font-semibold text-text">{cls.courseId?.title || 'Untitled Course'}</span>

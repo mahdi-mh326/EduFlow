@@ -161,8 +161,23 @@ const getPayments = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: PAYMENT_MESSAGES.PAYMENTS_FETCHED,
-    meta: result.meta,
+    meta: {
+      ...result.meta,
+      summary: result.summary,
+    },
     data: result.payments,
+  });
+});
+
+const updatePaymentStatus = catchAsync(async (req, res) => {
+  const { status } = req.body;
+  const result = await PaymentService.updatePaymentStatus(req.params.id, status);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Payment status updated successfully",
+    data: result,
   });
 });
 
@@ -200,6 +215,7 @@ export const PaymentController = {
   paymentIpn,
   getStudentPayments,
   getPayments,
+  updatePaymentStatus,
   getPaymentById,
   getPaymentByTransactionId,
 };

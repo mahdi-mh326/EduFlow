@@ -561,6 +561,7 @@ const getPayments = async (query) => {
   const {
     page = 1,
     limit = 10,
+    search,
     courseId,
     teacherId,
     studentId,
@@ -579,6 +580,23 @@ const getPayments = async (query) => {
   if (studentId) filter.studentId = studentId;
   if (status) filter.status = status;
 
+  if (search && search.trim()) {
+    const s = search.trim();
+    const matchingUsers = await User.find({
+      $or: [
+        { fullName: { $regex: s, $options: "i" } },
+        { email: { $regex: s, $options: "i" } },
+        { phone: { $regex: s, $options: "i" } },
+      ],
+    }).select("_id");
+    const userIds = matchingUsers.map((u) => u._id);
+
+    filter.$or = [
+      { transactionId: { $regex: s, $options: "i" } },
+      { studentId: { $in: userIds } },
+    ];
+  }
+
   let sort = {};
   switch (sortBy) {
     case "amount":
@@ -593,7 +611,7 @@ const getPayments = async (query) => {
       break;
   }
 
-  const [countResult, payments] = await Promise.all([
+  const [countResult, payments, summaryAgg] = await Promise.all([
     Payment.countDocuments(filter),
     Payment.find(filter)
       .sort(sort)
@@ -602,7 +620,33 @@ const getPayments = async (query) => {
       .populate("studentId", "fullName email phone")
       .populate("courseId", "title slug price")
       .populate("classId", "batchName startDate endDate"),
+    Payment.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+    ]),
   ]);
+
+  let totalRevenue = 0;
+  let paidCount = 0;
+  let pendingCount = 0;
+  let failedCount = 0;
+
+  summaryAgg.forEach((item) => {
+    if (item._id === "paid") {
+      totalRevenue = item.totalAmount || 0;
+      paidCount = item.count || 0;
+    } else if (item._id === "pending") {
+      pendingCount = item.count || 0;
+    } else if (item._id === "failed" || item._id === "cancelled") {
+      failedCount += item.count || 0;
+    }
+  });
 
   const total = countResult;
   const totalPages = Math.ceil(total / limitNum);
@@ -614,8 +658,31 @@ const getPayments = async (query) => {
       limit: limitNum,
       totalPages,
     },
+    summary: {
+      totalRevenue,
+      paidCount,
+      pendingCount,
+      failedCount,
+    },
     payments,
   };
+};
+
+const updatePaymentStatus = async (id, newStatus) => {
+  const payment = await Payment.findOne({ _id: id, isDeleted: { $ne: true } });
+  if (!payment) throw new ApiError(404, "Payment not found");
+
+  payment.status = newStatus;
+  if (newStatus === "paid" && !payment.paidAt) {
+    payment.paidAt = new Date();
+  }
+  await payment.save();
+
+  if (newStatus === "paid") {
+    await ensureEnrollmentForPayment(payment);
+  }
+
+  return payment;
 };
 
 const getPaymentById = async (id) => {
@@ -664,6 +731,7 @@ export const PaymentService = {
   handlePaymentIpn,
   getStudentPayments,
   getPayments,
+  updatePaymentStatus,
   getPaymentById,
   getPaymentByTranId,
 };

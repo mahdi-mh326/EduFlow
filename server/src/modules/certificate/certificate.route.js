@@ -49,4 +49,18 @@ router.get(
   CertificateController.getAllCertificates
 );
 
+router.patch(
+  "/:id/revoke",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  CertificateController.revokeCertificate
+);
+
+router.patch(
+  "/:id/restore",
+  authenticate,
+  authorize(USER_ROLE.ADMIN),
+  CertificateController.restoreCertificate
+);
+
 export const CertificateRoutes = router;

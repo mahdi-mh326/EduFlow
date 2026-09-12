@@ -9,7 +9,7 @@ import {
   FileTextIcon,
 } from '@/components/ui/icons'
 import type { Material } from '@/types/material'
-import { getSafeExternalUrl } from '@/utils'
+import { getSafeExternalUrl, getFileProxyUrl } from '@/utils'
 
 export function TeacherMaterials() {
   const [materials, setMaterials] = useState<Material[]>([])
@@ -57,11 +57,29 @@ export function TeacherMaterials() {
     loadData()
   }, [])
 
+  const courses = useMemo(() => {
+    const map = new Map<string, { _id: string; title: string }>()
+    classes.forEach((c) => {
+      const cid = c.courseId?._id ? String(c.courseId._id) : (c.courseId ? String(c.courseId) : '')
+      const ctitle = c.courseId?.title || 'Course'
+      if (cid && !map.has(cid)) {
+        map.set(cid, { _id: cid, title: ctitle })
+      }
+    })
+    return Array.from(map.values())
+  }, [classes])
+
   const openCreateModal = () => {
     setEditingMaterial(null)
+    const firstClass = classes[0]
+    const defaultClassId = firstClass?._id ? String(firstClass._id) : ''
+    const defaultCourseId = firstClass?.courseId?._id
+      ? String(firstClass.courseId._id)
+      : (firstClass?.courseId ? String(firstClass.courseId) : '')
+
     setFormData({
-      courseId: classes[0]?.courseId?._id || '',
-      classId: classes[0]?._id || '',
+      courseId: defaultCourseId,
+      classId: defaultClassId,
       title: '',
       description: '',
       fileUrl: '',
@@ -87,37 +105,50 @@ export function TeacherMaterials() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.classId || !formData.courseId || !formData.title.trim() || !formData.fileUrl.trim()) {
-      toast.error('Please fill in all required fields.')
+    if (!formData.classId) {
+      toast.error('Please select a class.')
+      return
+    }
+    if (!formData.title.trim()) {
+      toast.error('Please enter a material title.')
+      return
+    }
+    if (!formData.fileUrl.trim()) {
+      toast.error('Please upload a file or enter a valid file URL.')
       return
     }
 
-    const selectedClass = classes.find((c) => c._id === formData.classId)
-    const teacherId = selectedClass?.teacherId?._id || selectedClass?.teacherId
+    const selectedClass = classes.find((c) => String(c._id) === String(formData.classId))
+    const courseId =
+      formData.courseId ||
+      (selectedClass?.courseId?._id ? String(selectedClass.courseId._id) : String(selectedClass?.courseId || ''))
+    const teacherId = selectedClass?.teacherId?._id
+      ? String(selectedClass.teacherId._id)
+      : (selectedClass?.teacherId ? String(selectedClass.teacherId) : undefined)
 
     setSaving(true)
     try {
       if (editingMaterial) {
         await materialApi.updateMaterial(editingMaterial._id, {
-          courseId: formData.courseId,
+          courseId,
           classId: formData.classId,
           teacherId,
-          title: formData.title,
-          description: formData.description,
-          fileUrl: formData.fileUrl,
-          fileType: formData.fileType,
+          title: formData.title.trim(),
+          description: formData.description?.trim() || '',
+          fileUrl: formData.fileUrl.trim(),
+          fileType: formData.fileType || 'pdf',
           visibility: formData.visibility,
         })
         toast.success('Study material updated')
       } else {
         await materialApi.createMaterial({
-          courseId: formData.courseId,
+          courseId,
           classId: formData.classId,
           teacherId,
-          title: formData.title,
-          description: formData.description,
-          fileUrl: formData.fileUrl,
-          fileType: formData.fileType,
+          title: formData.title.trim(),
+          description: formData.description?.trim() || '',
+          fileUrl: formData.fileUrl.trim(),
+          fileType: formData.fileType || 'pdf',
           visibility: formData.visibility,
         })
         toast.success('Study material uploaded')
@@ -126,7 +157,7 @@ export function TeacherMaterials() {
       const fresh = await materialApi.getMaterials()
       setMaterials(fresh || [])
     } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to save material.'
+      const message = err?.response?.data?.message || err?.message || 'Failed to save material.'
       toast.error(message)
     } finally {
       setSaving(false)
@@ -313,11 +344,33 @@ export function TeacherMaterials() {
 
                 <div className="flex items-center gap-2 shrink-0">
                   {safeUrl && (
-                    <a href={safeUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm">
-                        View / Download
-                      </Button>
-                    </a>
+                    item.fileType === 'link' || item.fileType === 'video' || item.fileUrl.includes('youtube.com') || item.fileUrl.includes('youtu.be') || item.fileUrl.includes('drive.google.com') ? (
+                      <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm">
+                          {item.fileType === 'video' ? 'Watch Video' : 'Open Link'}
+                        </Button>
+                      </a>
+                    ) : (
+                      <>
+                        <a
+                          href={getFileProxyUrl(item.fileUrl, item.title, false, item.fileType)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline" size="sm">
+                            Preview
+                          </Button>
+                        </a>
+                        <a
+                          href={getFileProxyUrl(item.fileUrl, item.title, true, item.fileType)}
+                          download
+                        >
+                          <Button variant="outline" size="sm">
+                            Download
+                          </Button>
+                        </a>
+                      </>
+                    )
                   )}
                   <Button variant="outline" size="sm" onClick={() => openEditModal(item)}>
                     Edit
@@ -348,6 +401,36 @@ export function TeacherMaterials() {
             <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">
+                  Course
+                </label>
+                <select
+                  value={formData.courseId}
+                  onChange={(e) => {
+                    const newCourseId = e.target.value
+                    const stillValid = classes.some(
+                      (c) =>
+                        String(c._id) === String(formData.classId) &&
+                        String(c.courseId?._id || c.courseId) === newCourseId
+                    )
+                    setFormData({
+                      ...formData,
+                      courseId: newCourseId,
+                      classId: stillValid ? formData.classId : '',
+                    })
+                  }}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <option value="">All Courses ({courses.length})</option>
+                  {courses.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">
                   Class / Batch *
                 </label>
                 <select
@@ -355,21 +438,30 @@ export function TeacherMaterials() {
                   value={formData.classId}
                   onChange={(e) => {
                     const cId = e.target.value
-                    const selected = classes.find((c) => c._id === cId)
+                    const selected = classes.find((c) => String(c._id) === String(cId))
+                    const autoCourseId = selected?.courseId?._id
+                      ? String(selected.courseId._id)
+                      : (selected?.courseId ? String(selected.courseId) : formData.courseId)
                     setFormData({
                       ...formData,
                       classId: cId,
-                      courseId: selected?.courseId?._id || selected?.courseId || formData.courseId,
+                      courseId: autoCourseId,
                     })
                   }}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="">Select a class...</option>
-                  {classes.map((cls) => (
-                    <option key={cls._id} value={cls._id}>
-                      {cls.batchName} ({cls.courseId?.title || 'Course'})
-                    </option>
-                  ))}
+                  {classes
+                    .filter(
+                      (cls) =>
+                        !formData.courseId ||
+                        String(cls.courseId?._id || cls.courseId) === String(formData.courseId)
+                    )
+                    .map((cls) => (
+                      <option key={cls._id} value={cls._id}>
+                        {cls.batchName} ({cls.courseId?.title || 'Course'})
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -378,10 +470,12 @@ export function TeacherMaterials() {
                   Material Title *
                 </label>
                 <input
+                  id="teacher-material-title"
                   type="text"
                   required
+                  autoFocus
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Chapter 4 - Complete Lecture Slides"
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
@@ -393,8 +487,9 @@ export function TeacherMaterials() {
                     File Type *
                   </label>
                   <select
+                    id="teacher-material-file-type"
                     value={formData.fileType}
-                    onChange={(e) => setFormData({ ...formData, fileType: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, fileType: e.target.value }))}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <option value="pdf">PDF Document</option>
@@ -412,8 +507,9 @@ export function TeacherMaterials() {
                     Visibility
                   </label>
                   <select
+                    id="teacher-material-visibility"
                     value={formData.visibility}
-                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value as 'public' | 'private' })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, visibility: e.target.value as 'public' | 'private' }))}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <option value="public">Public (Enrolled Students)</option>
@@ -429,13 +525,13 @@ export function TeacherMaterials() {
                   folder="eduflow/materials"
                   value={formData.fileUrl}
                   onChange={(url, detectedType) => {
-                    setFormData({
-                      ...formData,
+                    setFormData((prev) => ({
+                      ...prev,
                       fileUrl: url,
                       ...(detectedType ? { fileType: detectedType } : {}),
-                    })
+                    }))
                   }}
-                  onRemove={() => setFormData({ ...formData, fileUrl: '' })}
+                  onRemove={() => setFormData((prev) => ({ ...prev, fileUrl: '' }))}
                 />
 
                 <div className="pt-1">
@@ -443,9 +539,10 @@ export function TeacherMaterials() {
                     Or Enter File / Drive URL
                   </label>
                   <input
+                    id="teacher-material-url"
                     type="url"
                     value={formData.fileUrl}
-                    onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, fileUrl: e.target.value }))}
                     placeholder="https://drive.google.com/... or https://..."
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   />
@@ -458,9 +555,10 @@ export function TeacherMaterials() {
                   Description (Optional)
                 </label>
                 <textarea
+                  id="teacher-material-desc"
                   rows={2}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="Additional context or notes about this resource..."
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />

@@ -1,4 +1,4 @@
-export { getSafeExternalUrl } from './url'
+export { getSafeExternalUrl, getFileProxyUrl } from './url'
 export function formatCurrency(amount: number | null | undefined, currency = 'BDT'): string {
   if (amount == null || !Number.isFinite(amount)) return 'N/A'
 

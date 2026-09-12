@@ -159,8 +159,13 @@ export const adminApi = {
   },
 
 
-  getPayments: async (params?: { page?: number; limit?: number; courseId?: string; studentId?: string; status?: string; sortBy?: string; sortOrder?: string }): Promise<AdminListResponse<AdminPayment>> => {
+  getPayments: async (params?: { page?: number; limit?: number; search?: string; courseId?: string; studentId?: string; status?: string; sortBy?: string; sortOrder?: string }): Promise<AdminListResponse<AdminPayment> & { meta?: { total: number; page: number; limit: number; totalPages: number; summary?: { totalRevenue: number; paidCount: number; pendingCount: number; failedCount: number } } }> => {
     const { data } = await apiClient.get('/payments', { params })
+    return data
+  },
+
+  updatePaymentStatus: async (id: string, status: string): Promise<AdminDetailResponse<AdminPayment>> => {
+    const { data } = await apiClient.patch(`/payments/${id}/status`, { status })
     return data
   },
 
@@ -254,7 +259,7 @@ export const adminApi = {
     return data
   },
 
-  getMaterials: async (params?: { courseId?: string; classId?: string }): Promise<{ success: boolean; data: any[] }> => {
+  getMaterials: async (params?: { courseId?: string; classId?: string; fileType?: string; search?: string }): Promise<{ success: boolean; data: any[] }> => {
     const { data } = await apiClient.get('/materials', { params })
     return data
   },

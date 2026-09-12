@@ -1,6 +1,7 @@
 import express from "express";
 import authenticate from "../../middlewares/authenticate.js";
 import authorize from "../../middlewares/authorize.js";
+import validateRequest from "../../middlewares/validateRequest.js";
 import { USER_ROLE } from "../user/user.constant.js";
 import { MaterialController } from "./material.controller.js";
 import { MaterialValidation } from "./material.validation.js";
@@ -14,23 +15,25 @@ router.get("/:id", authenticate, MaterialController.getMaterialById);
 router.post(
   "/",
   authenticate,
-  authorize(USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  validateRequest(MaterialValidation.createMaterialSchema),
   MaterialController.createMaterial
 );
 
 router.patch(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
+  validateRequest(MaterialValidation.updateMaterialSchema),
   MaterialController.updateMaterial
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorize(USER_ROLE.TEACHER),
+  authorize(USER_ROLE.ADMIN, USER_ROLE.TEACHER),
   MaterialController.deleteMaterial
 );
 
-
 export default router;
+

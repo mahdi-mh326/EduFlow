@@ -1,6 +1,7 @@
 import { useState, useRef, type DragEvent, type ChangeEvent } from 'react'
 import { toast } from 'react-hot-toast'
 import { uploadApi } from '@/services/api/upload'
+import { getFileProxyUrl } from '@/utils'
 import { SpinnerIcon, TrashIcon, CheckCircleIcon, FileTextIcon } from './icons'
 
 
@@ -111,7 +112,7 @@ export function FileUploadDropzone({
               <div className="flex items-center gap-2 text-[11px] text-text-muted">
                 {uploadedSize && <span>{uploadedSize}</span>}
                 <a
-                  href={value}
+                  href={getFileProxyUrl(value, uploadedName, false)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium text-primary hover:underline"
